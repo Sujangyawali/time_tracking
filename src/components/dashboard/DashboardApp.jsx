@@ -175,6 +175,23 @@ export default function DashboardApp() {
     });
   };
 
+  const duplicateTask = (catId, subId, taskId) => {
+    updateCategories((cats) => {
+      const s = cats.find((item) => item.id === catId)?.subcategories.find((item) => item.id === subId);
+      const taskToCopy = s?.tasks.find((item) => item.id === taskId);
+      if (!s || !taskToCopy) return cats;
+
+      s.tasks.push({
+        ...taskToCopy,
+        id: buildId("t"),
+        name: `${taskToCopy.name} (Copy)`,
+        status: "Pending",
+        entries: [],
+      });
+      return cats;
+    });
+  };
+
   const setTaskStatus = (catId, subId, taskId, status) => {
     updateCategories((cats) => {
       const t = cats.find((item) => item.id === catId)?.subcategories.find((item) => item.id === subId)?.tasks.find((item) => item.id === taskId);
@@ -556,7 +573,7 @@ export default function DashboardApp() {
           )}
 
           {activeTab === "tasks" && (
-            <TasksTab categories={categories} flatTasks={flatTasks} taskForm={taskForm} setTaskForm={setTaskForm} upsertTask={upsertTask} deleteTask={deleteTask} setTaskStatus={setTaskStatus} logEntryFor={logEntryFor} setLogEntryFor={setLogEntryFor} logDuration={logDuration} setLogDuration={setLogDuration} addTimeEntry={addTimeEntry} deleteEntry={deleteEntry} taskFilterCat={taskFilterCat} setTaskFilterCat={setTaskFilterCat} taskFilterStatus={taskFilterStatus} setTaskFilterStatus={setTaskFilterStatus} expanded={expanded} toggleExpand={toggleExpand} />
+            <TasksTab categories={categories} flatTasks={flatTasks} taskForm={taskForm} setTaskForm={setTaskForm} upsertTask={upsertTask} deleteTask={deleteTask} duplicateTask={duplicateTask} setTaskStatus={setTaskStatus} logEntryFor={logEntryFor} setLogEntryFor={setLogEntryFor} logDuration={logDuration} setLogDuration={setLogDuration} addTimeEntry={addTimeEntry} deleteEntry={deleteEntry} taskFilterCat={taskFilterCat} setTaskFilterCat={setTaskFilterCat} taskFilterStatus={taskFilterStatus} setTaskFilterStatus={setTaskFilterStatus} expanded={expanded} toggleExpand={toggleExpand} />
           )}
 
           {activeTab === "trends" && (

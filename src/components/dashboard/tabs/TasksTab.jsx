@@ -1,11 +1,11 @@
 import React from "react";
-import { Plus, Trash2, Pencil, ChevronDown, ChevronRight, X, Check, Clock, Play, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Pencil, ChevronDown, ChevronRight, X, Check, Clock, Play, AlertTriangle, Copy } from "lucide-react";
 import { Card, SectionLabel, TinyInput, TinySelect, PrimaryBtn, IconBtn } from "../shared";
 import { fmtHrs, fmtShort, TODAY } from "../../../lib/dateUtils";
 import { CLAY, LINE, MOSS, MUTED, INK } from "../../../styles/dashboardTheme";
 
 export default function TasksTab({
-  categories, flatTasks, taskForm, setTaskForm, upsertTask, deleteTask, setTaskStatus,
+  categories, flatTasks, taskForm, setTaskForm, upsertTask, deleteTask, duplicateTask, setTaskStatus,
   logEntryFor, setLogEntryFor, logDuration, setLogDuration, addTimeEntry, deleteEntry,
   taskFilterCat, setTaskFilterCat, taskFilterStatus, setTaskFilterStatus, expanded, toggleExpand,
 }) {
@@ -108,6 +108,7 @@ export default function TasksTab({
                       <td className="p-3">
                         <div className="flex justify-end gap-0.5">
                           <IconBtn title="Log time" onClick={() => setLogEntryFor(logEntryFor === t.id ? null : t.id)}><Clock size={14} /></IconBtn>
+                          <IconBtn title="Duplicate" onClick={() => duplicateTask(t.catId, t.subId, t.id)}><Copy size={14} /></IconBtn>
                           <IconBtn title="Edit" onClick={() => setTaskForm({ catId: t.catId, subId: t.subId, name: t.name, est: t.estMinutes, date: t.date, editingTaskId: t.id })}><Pencil size={14} /></IconBtn>
                           <IconBtn title="Delete" danger onClick={() => deleteTask(t.catId, t.subId, t.id)}><Trash2 size={14} /></IconBtn>
                         </div>
