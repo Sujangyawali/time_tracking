@@ -12,9 +12,21 @@ import { upsertTimeEntry } from "../../lib/taskEntryUtils";
 
 const STORAGE_RETENTION_DAYS = 90;
 
+function normalizeCategoryColors(cats) {
+  const used = new Set();
+  return cats.map((cat, index) => {
+    let color = cat.color;
+    if (!color || used.has(color)) {
+      color = PALETTE.find((candidate) => !used.has(candidate)) || PALETTE[index % PALETTE.length];
+    }
+    used.add(color);
+    return { ...cat, color };
+  });
+}
+
 function pruneOldData(cats) {
   const cutoff = daysAgoStr(STORAGE_RETENTION_DAYS);
-  return cats.map((c) => ({
+  return normalizeCategoryColors(cats).map((c) => ({
     ...c,
     subcategories: c.subcategories.map((s) => ({
       ...s,
@@ -87,7 +99,9 @@ export default function DashboardApp() {
   const addCategory = () => {
     if (!newCatName.trim()) return;
     updateCategories((cats) => {
-      cats.push({ id: buildId("c"), name: newCatName.trim(), color: PALETTE[cats.length % PALETTE.length], subcategories: [] });
+      const usedColors = new Set(cats.map((cat) => cat.color));
+      const nextColor = PALETTE.find((color) => !usedColors.has(color)) || PALETTE[cats.length % PALETTE.length];
+      cats.push({ id: buildId("c"), name: newCatName.trim(), color: nextColor, subcategories: [] });
       return cats;
     });
     setNewCatName("");

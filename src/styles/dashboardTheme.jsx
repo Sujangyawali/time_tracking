@@ -1,6 +1,27 @@
 import React from "react";
 
-export const PALETTE = ["#D98E3D", "#5C7A5E", "#4C6B72", "#B85C4A", "#8C6E9C", "#C2A661"];
+export const PALETTE = [
+  "#D98E3D",
+  "#5C7A5E",
+  "#4C6B72",
+  "#B85C4A",
+  "#8C6E9C",
+  "#C2A661",
+  "#3F7D20",
+  "#7A4B2A",
+  "#2E6F95",
+  "#A33E5C",
+  "#6C4E9C",
+  "#9B7A3C",
+  "#5A8F7B",
+  "#8B5A3C",
+  "#4F6D7A",
+  "#B35F5F",
+  "#6A7D3C",
+  "#7C5A90",
+  "#4E7D8A",
+  "#C17A4D",
+];
 export const INK = "#23241F";
 export const MUTED = "#74786F";
 export const PAPER = "#F7F4EE";
