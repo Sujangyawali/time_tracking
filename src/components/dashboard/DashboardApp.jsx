@@ -60,6 +60,9 @@ export default function DashboardApp() {
   const [taskForm, setTaskForm] = useState(null);
   const [taskFilterCat, setTaskFilterCat] = useState("all");
   const [taskFilterStatus, setTaskFilterStatus] = useState("all");
+  const [taskDateFilter, setTaskDateFilter] = useState("all");
+  const [taskStartDate, setTaskStartDate] = useState(TODAY);
+  const [taskEndDate, setTaskEndDate] = useState(TODAY);
   const [nepalTime, setNepalTime] = useState(new Date());
   const saveTimer = useRef(null);
   const fileInputRef = useRef(null);
@@ -573,7 +576,7 @@ export default function DashboardApp() {
           )}
 
           {activeTab === "tasks" && (
-            <TasksTab categories={categories} flatTasks={flatTasks} taskForm={taskForm} setTaskForm={setTaskForm} upsertTask={upsertTask} deleteTask={deleteTask} duplicateTask={duplicateTask} setTaskStatus={setTaskStatus} logEntryFor={logEntryFor} setLogEntryFor={setLogEntryFor} logDuration={logDuration} setLogDuration={setLogDuration} addTimeEntry={addTimeEntry} deleteEntry={deleteEntry} taskFilterCat={taskFilterCat} setTaskFilterCat={setTaskFilterCat} taskFilterStatus={taskFilterStatus} setTaskFilterStatus={setTaskFilterStatus} expanded={expanded} toggleExpand={toggleExpand} />
+            <TasksTab categories={categories} flatTasks={flatTasks} taskForm={taskForm} setTaskForm={setTaskForm} upsertTask={upsertTask} deleteTask={deleteTask} duplicateTask={duplicateTask} setTaskStatus={setTaskStatus} logEntryFor={logEntryFor} setLogEntryFor={setLogEntryFor} logDuration={logDuration} setLogDuration={setLogDuration} addTimeEntry={addTimeEntry} deleteEntry={deleteEntry} taskFilterCat={taskFilterCat} setTaskFilterCat={setTaskFilterCat} taskFilterStatus={taskFilterStatus} setTaskFilterStatus={setTaskFilterStatus} taskDateFilter={taskDateFilter} setTaskDateFilter={setTaskDateFilter} taskStartDate={taskStartDate} setTaskStartDate={setTaskStartDate} taskEndDate={taskEndDate} setTaskEndDate={setTaskEndDate} expanded={expanded} toggleExpand={toggleExpand} />
           )}
 
           {activeTab === "trends" && (

@@ -8,11 +8,24 @@ export default function TasksTab({
   categories, flatTasks, taskForm, setTaskForm, upsertTask, deleteTask, duplicateTask, setTaskStatus,
   logEntryFor, setLogEntryFor, logDuration, setLogDuration, addTimeEntry, deleteEntry,
   taskFilterCat, setTaskFilterCat, taskFilterStatus, setTaskFilterStatus, expanded, toggleExpand,
+  taskDateFilter, setTaskDateFilter, taskStartDate, setTaskStartDate, taskEndDate, setTaskEndDate,
 }) {
   const allSubs = (catId) => categories.find((c) => c.id === catId)?.subcategories || [];
+  
+  const getDateBounds = () => {
+    if (taskDateFilter === "all") return { start: "0000-01-01", end: "9999-12-31" };
+    if (taskDateFilter === "today") return { start: TODAY, end: TODAY };
+    if (taskDateFilter === "7d") return { start: new Date(new Date(TODAY).setDate(new Date(TODAY).getDate() - 6)).toISOString().split('T')[0], end: TODAY };
+    if (taskDateFilter === "30d") return { start: new Date(new Date(TODAY).setDate(new Date(TODAY).getDate() - 29)).toISOString().split('T')[0], end: TODAY };
+    if (taskDateFilter === "custom") return { start: taskStartDate || TODAY, end: taskEndDate || TODAY };
+    return { start: "0000-01-01", end: "9999-12-31" };
+  };
+  
+  const { start: dateStart, end: dateEnd } = getDateBounds();
   const visibleTasks = flatTasks
     .filter((t) => taskFilterCat === "all" || t.catId === taskFilterCat)
     .filter((t) => taskFilterStatus === "all" || t.status === taskFilterStatus)
+    .filter((t) => t.date >= dateStart && t.date <= dateEnd)
     .sort((a, b) => b.date.localeCompare(a.date));
 
   const startNewTask = () => {
@@ -36,6 +49,20 @@ export default function TasksTab({
           <option value="all">All statuses</option>
           <option>Pending</option><option>In Progress</option><option>Completed</option>
         </TinySelect>
+        <TinySelect value={taskDateFilter} onChange={(e) => setTaskDateFilter(e.target.value)}>
+          <option value="all">All dates</option>
+          <option value="today">Today</option>
+          <option value="7d">Last 7 days</option>
+          <option value="30d">Last 30 days</option>
+          <option value="custom">Custom range</option>
+        </TinySelect>
+        {taskDateFilter === "custom" && (
+          <>
+            <TinyInput type="date" value={taskStartDate} onChange={(e) => setTaskStartDate(e.target.value)} className="w-40" />
+            <span style={{ color: MUTED }} className="text-xs">to</span>
+            <TinyInput type="date" value={taskEndDate} onChange={(e) => setTaskEndDate(e.target.value)} className="w-40" />
+          </>
+        )}
         <div className="flex-1" />
         <PrimaryBtn onClick={startNewTask} style={{ background: "#D98E3D" }}><Plus size={14} /> New task</PrimaryBtn>
       </div>
