@@ -1,6 +1,6 @@
 import React from "react";
 import { Plus, Trash2, Pencil, ChevronDown, ChevronRight, X, Check, Clock, Play, AlertTriangle, Copy } from "lucide-react";
-import { Card, SectionLabel, TinyInput, TinySelect, PrimaryBtn, IconBtn } from "../shared";
+import { Card, SectionLabel, TinyInput, TinySelect, MultiSelect, PrimaryBtn, IconBtn } from "../shared";
 import { fmtHrs, fmtShort, TODAY } from "../../../lib/dateUtils";
 import { CLAY, LINE, MOSS, MUTED, INK } from "../../../styles/dashboardTheme";
 
@@ -23,8 +23,8 @@ export default function TasksTab({
   
   const { start: dateStart, end: dateEnd } = getDateBounds();
   const visibleTasks = flatTasks
-    .filter((t) => taskFilterCat === "all" || t.catId === taskFilterCat)
-    .filter((t) => taskFilterStatus === "all" || t.status === taskFilterStatus)
+    .filter((t) => taskFilterCat.length === 0 || taskFilterCat.includes(t.catId))
+    .filter((t) => taskFilterStatus.length === 0 || taskFilterStatus.includes(t.status))
     .filter((t) => t.date >= dateStart && t.date <= dateEnd)
     .sort((a, b) => b.date.localeCompare(a.date));
 
@@ -41,14 +41,22 @@ export default function TasksTab({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <TinySelect value={taskFilterCat} onChange={(e) => setTaskFilterCat(e.target.value)}>
-          <option value="all">All categories</option>
-          {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </TinySelect>
-        <TinySelect value={taskFilterStatus} onChange={(e) => setTaskFilterStatus(e.target.value)}>
-          <option value="all">All statuses</option>
-          <option>Pending</option><option>In Progress</option><option>Completed</option>
-        </TinySelect>
+        <MultiSelect
+          placeholder="All categories"
+          options={categories.map((c) => ({ value: c.id, label: c.name }))}
+          selected={taskFilterCat}
+          onChange={setTaskFilterCat}
+        />
+        <MultiSelect
+          placeholder="All statuses"
+          options={[
+            { value: "Pending", label: "Pending" },
+            { value: "In Progress", label: "In Progress" },
+            { value: "Completed", label: "Completed" },
+          ]}
+          selected={taskFilterStatus}
+          onChange={setTaskFilterStatus}
+        />
         <TinySelect value={taskDateFilter} onChange={(e) => setTaskDateFilter(e.target.value)}>
           <option value="all">All dates</option>
           <option value="today">Today</option>

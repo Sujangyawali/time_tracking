@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { INK, LINE, MUTED, CLAY, AMBER, MOSS } from "../../styles/dashboardTheme";
 
 export function Card({ children, className = "" }) {
@@ -75,6 +76,54 @@ export function TinySelect(props) {
     <select {...props} className={`px-2.5 py-1.5 rounded-lg border text-sm outline-none bg-white ${props.className || ""}`} style={{ borderColor: LINE, ...props.style }}>
       {props.children}
     </select>
+  );
+}
+
+export function MultiSelect({ options, selected, onChange, placeholder = "All" }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const onClickOutside = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
+  const toggle = (value) => {
+    onChange(selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]);
+  };
+
+  const label =
+    selected.length === 0
+      ? placeholder
+      : selected.length === 1
+      ? options.find((o) => o.value === selected[0])?.label || placeholder
+      : `${selected.length} selected`;
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="px-2.5 py-1.5 rounded-lg border text-sm outline-none bg-white flex items-center gap-1.5"
+        style={{ borderColor: LINE, color: selected.length === 0 ? MUTED : INK }}
+      >
+        <span>{label}</span>
+        <ChevronDown size={13} style={{ color: MUTED }} />
+      </button>
+      {open && (
+        <div className="absolute z-10 mt-1 min-w-[180px] max-h-64 overflow-y-auto rounded-lg border bg-white shadow-lg py-1" style={{ borderColor: LINE }}>
+          {options.map((o) => (
+            <label key={o.value} className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-black/[0.03] cursor-pointer">
+              <input type="checkbox" checked={selected.includes(o.value)} onChange={() => toggle(o.value)} />
+              <span>{o.label}</span>
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

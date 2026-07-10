@@ -58,8 +58,8 @@ export default function DashboardApp() {
   const [logEntryFor, setLogEntryFor] = useState(null);
   const [logDuration, setLogDuration] = useState("");
   const [taskForm, setTaskForm] = useState(null);
-  const [taskFilterCat, setTaskFilterCat] = useState("all");
-  const [taskFilterStatus, setTaskFilterStatus] = useState("all");
+  const [taskFilterCat, setTaskFilterCat] = useState([]);
+  const [taskFilterStatus, setTaskFilterStatus] = useState([]);
   const [taskDateFilter, setTaskDateFilter] = useState("all");
   const [taskStartDate, setTaskStartDate] = useState(TODAY);
   const [taskEndDate, setTaskEndDate] = useState(TODAY);
