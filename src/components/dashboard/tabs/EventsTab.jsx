@@ -1,11 +1,20 @@
-import React from "react";
+import React, { useState } from "react";
 import { Plus, Trash2, Pencil, X, Check } from "lucide-react";
 import { Card, SectionLabel, TinyInput, PrimaryBtn, IconBtn } from "../shared";
-import { fmtShort, TODAY } from "../../../lib/dateUtils";
-import { LINE, MUTED, INK } from "../../../styles/dashboardTheme";
+import { fmtShort, daysUntil, TODAY } from "../../../lib/dateUtils";
+import { CLAY, LINE, MOSS, MUTED, INK } from "../../../styles/dashboardTheme";
+
+function formatDaysUntil(n) {
+  if (n === 0) return "Today";
+  if (n === 1) return "Tomorrow";
+  if (n === -1) return "Yesterday";
+  if (n > 1) return `In ${n} days`;
+  return `${Math.abs(n)} days ago`;
+}
 
 export default function EventsTab({ events, eventForm, setEventForm, upsertEvent, deleteEvent }) {
   const sortedEvents = [...events].sort((a, b) => a.date.localeCompare(b.date));
+  const [expandedDesc, setExpandedDesc] = useState({});
 
   const startNewEvent = () => {
     setEventForm({ name: "", description: "", date: TODAY, editingEventId: null });
@@ -39,28 +48,38 @@ export default function EventsTab({ events, eventForm, setEventForm, upsertEvent
                 <th className="p-3 font-medium">Event</th>
                 <th className="p-3 font-medium">Description</th>
                 <th className="p-3 font-medium">Date</th>
+                <th className="p-3 font-medium">In Days</th>
                 <th className="p-3 font-medium text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {sortedEvents.length === 0 && (
-                <tr><td colSpan={4} className="p-6 text-center" style={{ color: MUTED }}>No upcoming events.</td></tr>
+                <tr><td colSpan={5} className="p-6 text-center" style={{ color: MUTED }}>No upcoming events.</td></tr>
               )}
-              {sortedEvents.map((ev) => (
-                <tr key={ev.id} className="border-b hover:bg-black/[0.02]" style={{ borderColor: LINE }}>
-                  <td className="p-3 font-medium">{ev.name}</td>
-                  <td className="p-3 text-xs max-w-[280px] truncate" title={ev.description || ""} style={{ color: ev.description ? INK : MUTED }}>
-                    {ev.description || "—"}
-                  </td>
-                  <td className="p-3 text-xs">{fmtShort(ev.date)}</td>
-                  <td className="p-3">
-                    <div className="flex justify-end gap-0.5">
-                      <IconBtn title="Edit" onClick={() => setEventForm({ name: ev.name, description: ev.description || "", date: ev.date, editingEventId: ev.id })}><Pencil size={14} /></IconBtn>
-                      <IconBtn title="Delete" danger onClick={() => deleteEvent(ev.id)}><Trash2 size={14} /></IconBtn>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {sortedEvents.map((ev) => {
+                const diff = daysUntil(ev.date);
+                return (
+                  <tr key={ev.id} className="border-b hover:bg-black/[0.02]" style={{ borderColor: LINE }}>
+                    <td className="p-3 font-medium">{ev.name}</td>
+                    <td
+                      className={`p-3 text-xs whitespace-normal break-words ${ev.description ? "cursor-pointer" : ""} ${expandedDesc[ev.id] ? "max-w-[280px]" : "line-clamp-2 max-w-[220px]"}`}
+                      onClick={() => ev.description && setExpandedDesc((prev) => ({ ...prev, [ev.id]: !prev[ev.id] }))}
+                      title={!expandedDesc[ev.id] ? (ev.description || "") : ""}
+                      style={{ color: ev.description ? INK : MUTED }}
+                    >
+                      {ev.description || "—"}
+                    </td>
+                    <td className="p-3 text-xs">{fmtShort(ev.date)}</td>
+                    <td className="p-3 text-xs" style={{ color: diff < 0 ? CLAY : diff === 0 ? MOSS : INK }}>{formatDaysUntil(diff)}</td>
+                    <td className="p-3">
+                      <div className="flex justify-end gap-0.5">
+                        <IconBtn title="Edit" onClick={() => setEventForm({ name: ev.name, description: ev.description || "", date: ev.date, editingEventId: ev.id })}><Pencil size={14} /></IconBtn>
+                        <IconBtn title="Delete" danger onClick={() => deleteEvent(ev.id)}><Trash2 size={14} /></IconBtn>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

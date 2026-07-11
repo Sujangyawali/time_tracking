@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Plus, Trash2, Pencil, ChevronDown, ChevronRight, X, Check, Clock, Play, AlertTriangle, Copy } from "lucide-react";
 import { Card, SectionLabel, TinyInput, TinySelect, MultiSelect, PrimaryBtn, IconBtn } from "../shared";
 import { fmtHrs, fmtShort, TODAY } from "../../../lib/dateUtils";
@@ -11,7 +11,8 @@ export default function TasksTab({
   taskDateFilter, setTaskDateFilter, taskStartDate, setTaskStartDate, taskEndDate, setTaskEndDate,
 }) {
   const allSubs = (catId) => categories.find((c) => c.id === catId)?.subcategories || [];
-  
+  const [expandedDesc, setExpandedDesc] = useState({});
+
   const getDateBounds = () => {
     if (taskDateFilter === "all") return { start: "0000-01-01", end: "9999-12-31" };
     if (taskDateFilter === "today") return { start: TODAY, end: TODAY };
@@ -142,7 +143,12 @@ export default function TasksTab({
                           <option>Pending</option><option>In Progress</option><option>Completed</option>
                         </TinySelect>
                       </td>
-                      <td className="p-3 text-xs max-w-[220px] truncate" title={t.description || ""} style={{ color: t.description ? INK : MUTED }}>
+                      <td
+                        className={`p-3 text-xs whitespace-normal break-words ${t.description ? "cursor-pointer" : ""} ${expandedDesc[t.id] ? "max-w-[280px]" : "line-clamp-2 max-w-[220px]"}`}
+                        onClick={() => t.description && setExpandedDesc((prev) => ({ ...prev, [t.id]: !prev[t.id] }))}
+                        title={!expandedDesc[t.id] ? (t.description || "") : ""}
+                        style={{ color: t.description ? INK : MUTED }}
+                      >
                         {t.description || "—"}
                       </td>
                       <td className="p-3">

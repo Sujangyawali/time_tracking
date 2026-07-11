@@ -25,6 +25,12 @@ export const fmtHrs = (mins) => {
   return `${h}h ${m}m`;
 };
 
+export const daysUntil = (dateStr) => {
+  const d = new Date(dateStr + "T00:00:00");
+  const t = new Date(TODAY + "T00:00:00");
+  return Math.round((d - t) / 86400000);
+};
+
 export const dowMonday = (dateStr) => {
   const d = new Date(dateStr + "T00:00:00");
   const day = d.getDay();

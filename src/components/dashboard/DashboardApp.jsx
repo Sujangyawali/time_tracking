@@ -12,6 +12,9 @@ import { Card, IconBtn, PrimaryBtn, SectionLabel, TinyInput } from "./shared";
 import { addTaskTimeEntry } from "../../lib/taskEntryUtils";
 
 const STORAGE_RETENTION_DAYS = 90;
+const SIDEBAR_WIDTH_KEY = "time-tracker:sidebar-width";
+const SIDEBAR_MIN_WIDTH = 220;
+const SIDEBAR_MAX_WIDTH = 480;
 
 function normalizeCategoryColors(cats) {
   const used = new Set();
@@ -68,8 +71,14 @@ export default function DashboardApp() {
   const [nepalTime, setNepalTime] = useState(new Date());
   const [events, setEvents] = useState(() => readEvents() || []);
   const [eventForm, setEventForm] = useState(null);
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    const saved = Number(window.localStorage?.getItem(SIDEBAR_WIDTH_KEY));
+    return saved >= SIDEBAR_MIN_WIDTH && saved <= SIDEBAR_MAX_WIDTH ? saved : 300;
+  });
+  const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const saveTimer = useRef(null);
   const fileInputRef = useRef(null);
+  const sidebarContainerRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -104,6 +113,27 @@ export default function DashboardApp() {
     }, 1000);
     return () => window.clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (!isResizingSidebar) return;
+    const handleMouseMove = (e) => {
+      const rect = sidebarContainerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const next = Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, e.clientX - rect.left));
+      setSidebarWidth(next);
+    };
+    const handleMouseUp = () => setIsResizingSidebar(false);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isResizingSidebar]);
+
+  useEffect(() => {
+    window.localStorage?.setItem(SIDEBAR_WIDTH_KEY, String(sidebarWidth));
+  }, [sidebarWidth]);
 
   const updateCategories = (fn) => setCategories((prev) => fn(JSON.parse(JSON.stringify(prev))));
 
@@ -484,8 +514,8 @@ export default function DashboardApp() {
         ::-webkit-scrollbar-thumb { background: ${LINE}; border-radius: 4px; }
       `}</style>
 
-      <div className="flex flex-col lg:flex-row max-w-[1400px] mx-auto">
-        <aside className="lg:w-[300px] shrink-0 border-b lg:border-b-0 lg:border-r p-5" style={{ borderColor: LINE }}>
+      <div ref={sidebarContainerRef} className="flex flex-col lg:flex-row max-w-[1400px] mx-auto">
+        <aside className="lg:w-[300px] shrink-0 border-b lg:border-b-0 lg:border-r p-5" style={{ borderColor: LINE, "--sidebar-w": `${sidebarWidth}px` }}>
           <div className="flex items-baseline gap-2 mb-1">
             <Timer size={20} style={{ color: AMBER }} />
             <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: 600, fontSize: 21 }}>Ledger</h1>
@@ -563,6 +593,19 @@ export default function DashboardApp() {
           </div>
           <p className="text-[11px] mt-2 text-center" style={{ color: MUTED }}>Autosaved as JSON in local browser storage</p>
         </aside>
+
+        <div
+          className={`resize-handle${isResizingSidebar ? " is-resizing" : ""}`}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            setIsResizingSidebar(true);
+          }}
+          onDoubleClick={() => setSidebarWidth(300)}
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize sidebar"
+          title="Drag to resize, double-click to reset"
+        />
 
         <main className="flex-1 p-5 min-w-0">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
