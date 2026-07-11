@@ -1,4 +1,5 @@
 export const DASHBOARD_STORAGE_KEY = "time-tracker:categories:v1";
+export const EVENTS_STORAGE_KEY = "time-tracker:events:v1";
 
 export function readDashboardData() {
   if (typeof window === "undefined" || !window.localStorage) return null;
@@ -14,6 +15,26 @@ export function writeDashboardData(data) {
   if (typeof window === "undefined" || !window.localStorage) return false;
   try {
     window.localStorage.setItem(DASHBOARD_STORAGE_KEY, JSON.stringify(data));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function readEvents() {
+  if (typeof window === "undefined" || !window.localStorage) return null;
+  try {
+    const raw = window.localStorage.getItem(EVENTS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeEvents(events) {
+  if (typeof window === "undefined" || !window.localStorage) return false;
+  try {
+    window.localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(events));
     return true;
   } catch {
     return false;

@@ -2,10 +2,11 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Plus, Trash2, Pencil, ChevronDown, ChevronRight, RotateCcw, Timer, Folder, X, Check, Play, Clock, AlertTriangle } from "lucide-react";
 import OverviewTab from "./tabs/OverviewTab";
 import TasksTab from "./tabs/TasksTab";
+import EventsTab from "./tabs/EventsTab";
 import TrendsTab from "./tabs/TrendsTab";
 import { buildDemoDataFinal } from "../../data/demoData";
 import { daysAgo, daysAgoStr, dowMonday, fmtHrs, fmtShort, TODAY, toDateStr } from "../../lib/dateUtils";
-import { exportDashboardData, importDashboardData, readDashboardData, writeDashboardData, DASHBOARD_STORAGE_KEY } from "../../lib/storage";
+import { exportDashboardData, importDashboardData, readDashboardData, writeDashboardData, DASHBOARD_STORAGE_KEY, readEvents, writeEvents } from "../../lib/storage";
 import { AMBER, CLAY, INK, LINE, MOSS, MUTED, PALETTE, PAPER } from "../../styles/dashboardTheme";
 import { Card, IconBtn, PrimaryBtn, SectionLabel, TinyInput } from "./shared";
 import { addTaskTimeEntry } from "../../lib/taskEntryUtils";
@@ -65,6 +66,8 @@ export default function DashboardApp() {
   const [taskStartDate, setTaskStartDate] = useState(TODAY);
   const [taskEndDate, setTaskEndDate] = useState(TODAY);
   const [nepalTime, setNepalTime] = useState(new Date());
+  const [events, setEvents] = useState(() => readEvents() || []);
+  const [eventForm, setEventForm] = useState(null);
   const saveTimer = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -92,6 +95,10 @@ export default function DashboardApp() {
   }, [categories, storageReady]);
 
   useEffect(() => {
+    writeEvents(events);
+  }, [events]);
+
+  useEffect(() => {
     const interval = window.setInterval(() => {
       setNepalTime(new Date());
     }, 1000);
@@ -99,6 +106,21 @@ export default function DashboardApp() {
   }, []);
 
   const updateCategories = (fn) => setCategories((prev) => fn(JSON.parse(JSON.stringify(prev))));
+
+  const upsertEvent = (form) => {
+    if (!form.name.trim() || !form.date) return;
+    setEvents((prev) => {
+      if (form.editingEventId) {
+        return prev.map((ev) => (ev.id === form.editingEventId ? { ...ev, name: form.name.trim(), description: form.description.trim(), date: form.date } : ev));
+      }
+      return [...prev, { id: buildId("ev"), name: form.name.trim(), description: form.description.trim(), date: form.date }];
+    });
+    setEventForm(null);
+  };
+
+  const deleteEvent = (eventId) => {
+    setEvents((prev) => prev.filter((e) => e.id !== eventId));
+  };
 
   const addCategory = () => {
     if (!newCatName.trim()) return;
@@ -546,7 +568,7 @@ export default function DashboardApp() {
           <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
             <div className="flex items-center gap-2">
               <div className="flex gap-1 p-1 rounded-xl" style={{ background: "#EFEAE0" }}>
-              {[['overview', 'Overview'], ['tasks', 'Tasks'], ['trends', 'Trends & Insights']].map(([k, label]) => (
+              {[['overview', 'Overview'], ['tasks', 'Tasks'], ['events', 'Events'], ['trends', 'Trends & Insights']].map(([k, label]) => (
                 <button key={k} onClick={() => setActiveTab(k)} className="px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors" style={{ background: activeTab === k ? "#fff" : "transparent", color: activeTab === k ? INK : MUTED }}>{label}</button>
               ))}
             </div>
@@ -580,6 +602,10 @@ export default function DashboardApp() {
 
           {activeTab === "tasks" && (
             <TasksTab categories={categories} flatTasks={flatTasks} taskForm={taskForm} setTaskForm={setTaskForm} upsertTask={upsertTask} deleteTask={deleteTask} duplicateTask={duplicateTask} setTaskStatus={setTaskStatus} logEntryFor={logEntryFor} setLogEntryFor={setLogEntryFor} logHours={logHours} setLogHours={setLogHours} logDuration={logDuration} setLogDuration={setLogDuration} addTimeEntry={addTimeEntry} deleteEntry={deleteEntry} taskFilterCat={taskFilterCat} setTaskFilterCat={setTaskFilterCat} taskFilterStatus={taskFilterStatus} setTaskFilterStatus={setTaskFilterStatus} taskDateFilter={taskDateFilter} setTaskDateFilter={setTaskDateFilter} taskStartDate={taskStartDate} setTaskStartDate={setTaskStartDate} taskEndDate={taskEndDate} setTaskEndDate={setTaskEndDate} expanded={expanded} toggleExpand={toggleExpand} />
+          )}
+
+          {activeTab === "events" && (
+            <EventsTab events={events} eventForm={eventForm} setEventForm={setEventForm} upsertEvent={upsertEvent} deleteEvent={deleteEvent} />
           )}
 
           {activeTab === "trends" && (
