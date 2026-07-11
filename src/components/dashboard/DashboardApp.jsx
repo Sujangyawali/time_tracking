@@ -8,7 +8,7 @@ import { daysAgo, daysAgoStr, dowMonday, fmtHrs, fmtShort, TODAY, toDateStr } fr
 import { exportDashboardData, importDashboardData, readDashboardData, writeDashboardData, DASHBOARD_STORAGE_KEY } from "../../lib/storage";
 import { AMBER, CLAY, INK, LINE, MOSS, MUTED, PALETTE, PAPER } from "../../styles/dashboardTheme";
 import { Card, IconBtn, PrimaryBtn, SectionLabel, TinyInput } from "./shared";
-import { upsertTimeEntry } from "../../lib/taskEntryUtils";
+import { addTaskTimeEntry } from "../../lib/taskEntryUtils";
 
 const STORAGE_RETENTION_DAYS = 90;
 
@@ -56,6 +56,7 @@ export default function DashboardApp() {
   const [newSubName, setNewSubName] = useState("");
   const [editing, setEditing] = useState(null);
   const [logEntryFor, setLogEntryFor] = useState(null);
+  const [logHours, setLogHours] = useState("");
   const [logDuration, setLogDuration] = useState("");
   const [taskForm, setTaskForm] = useState(null);
   const [taskFilterCat, setTaskFilterCat] = useState([]);
@@ -208,12 +209,13 @@ export default function DashboardApp() {
     updateCategories((cats) => {
       const t = cats.find((item) => item.id === catId)?.subcategories.find((item) => item.id === subId)?.tasks.find((item) => item.id === taskId);
       if (t) {
-        const updatedTask = upsertTimeEntry(t, Number(duration), new Date().toISOString(), buildId);
+        const updatedTask = addTaskTimeEntry(t, Number(duration), new Date().toISOString(), buildId);
         Object.assign(t, updatedTask);
         if (t.status === "Pending") t.status = "In Progress";
       }
       return cats;
     });
+    setLogHours("");
     setLogDuration("");
     setLogEntryFor(null);
   };
@@ -381,10 +383,10 @@ export default function DashboardApp() {
   }, [flatTasks]);
 
   const categoryCompletion = useMemo(() => (categories || []).map((c) => {
-    const tasks = flatTasks.filter((t) => t.catId === c.id);
+    const tasks = filteredTasks.filter((t) => t.catId === c.id);
     const done = tasks.filter((t) => t.status === "Completed").length;
     return { name: c.name, color: c.color, pct: tasks.length ? Math.round((done / tasks.length) * 100) : 0, total: tasks.length, done };
-  }), [categories, flatTasks]);
+  }).filter((c) => c.total > 0), [categories, filteredTasks]);
 
   const busiestHour = useMemo(() => {
     const buckets = Array.from({ length: 24 }, (_, h) => ({ hour: h, label: h === 0 ? "12am" : h < 12 ? `${h}am` : h === 12 ? "12pm" : `${h - 12}pm`, minutes: 0 }));
@@ -576,7 +578,7 @@ export default function DashboardApp() {
           )}
 
           {activeTab === "tasks" && (
-            <TasksTab categories={categories} flatTasks={flatTasks} taskForm={taskForm} setTaskForm={setTaskForm} upsertTask={upsertTask} deleteTask={deleteTask} duplicateTask={duplicateTask} setTaskStatus={setTaskStatus} logEntryFor={logEntryFor} setLogEntryFor={setLogEntryFor} logDuration={logDuration} setLogDuration={setLogDuration} addTimeEntry={addTimeEntry} deleteEntry={deleteEntry} taskFilterCat={taskFilterCat} setTaskFilterCat={setTaskFilterCat} taskFilterStatus={taskFilterStatus} setTaskFilterStatus={setTaskFilterStatus} taskDateFilter={taskDateFilter} setTaskDateFilter={setTaskDateFilter} taskStartDate={taskStartDate} setTaskStartDate={setTaskStartDate} taskEndDate={taskEndDate} setTaskEndDate={setTaskEndDate} expanded={expanded} toggleExpand={toggleExpand} />
+            <TasksTab categories={categories} flatTasks={flatTasks} taskForm={taskForm} setTaskForm={setTaskForm} upsertTask={upsertTask} deleteTask={deleteTask} duplicateTask={duplicateTask} setTaskStatus={setTaskStatus} logEntryFor={logEntryFor} setLogEntryFor={setLogEntryFor} logHours={logHours} setLogHours={setLogHours} logDuration={logDuration} setLogDuration={setLogDuration} addTimeEntry={addTimeEntry} deleteEntry={deleteEntry} taskFilterCat={taskFilterCat} setTaskFilterCat={setTaskFilterCat} taskFilterStatus={taskFilterStatus} setTaskFilterStatus={setTaskFilterStatus} taskDateFilter={taskDateFilter} setTaskDateFilter={setTaskDateFilter} taskStartDate={taskStartDate} setTaskStartDate={setTaskStartDate} taskEndDate={taskEndDate} setTaskEndDate={setTaskEndDate} expanded={expanded} toggleExpand={toggleExpand} />
           )}
 
           {activeTab === "trends" && (

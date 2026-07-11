@@ -6,7 +6,7 @@ import { CLAY, LINE, MOSS, MUTED, INK } from "../../../styles/dashboardTheme";
 
 export default function TasksTab({
   categories, flatTasks, taskForm, setTaskForm, upsertTask, deleteTask, duplicateTask, setTaskStatus,
-  logEntryFor, setLogEntryFor, logDuration, setLogDuration, addTimeEntry, deleteEntry,
+  logEntryFor, setLogEntryFor, logHours, setLogHours, logDuration, setLogDuration, addTimeEntry, deleteEntry,
   taskFilterCat, setTaskFilterCat, taskFilterStatus, setTaskFilterStatus, expanded, toggleExpand,
   taskDateFilter, setTaskDateFilter, taskStartDate, setTaskStartDate, taskEndDate, setTaskEndDate,
 }) {
@@ -154,9 +154,17 @@ export default function TasksTab({
                         <td colSpan={7} className="p-3">
                           <div className="flex items-center gap-2">
                             <Play size={13} style={{ color: MOSS }} />
-                            <span className="text-xs" style={{ color: MUTED }}>Log minutes spent:</span>
-                            <TinyInput type="number" autoFocus value={logDuration} onChange={(e) => setLogDuration(e.target.value)} placeholder="e.g. 25" className="w-28" />
-                            <PrimaryBtn onClick={() => addTimeEntry(t.catId, t.subId, t.id, logDuration)} style={{ background: MOSS, padding: "5px 10px" }}>Add</PrimaryBtn>
+                            <span className="text-xs" style={{ color: MUTED }}>Log time spent:</span>
+                            <TinyInput type="number" min="0" autoFocus value={logHours} onChange={(e) => setLogHours(e.target.value)} placeholder="hh" className="w-16" />
+                            <span className="text-xs" style={{ color: MUTED }}>hr</span>
+                            <TinyInput type="number" min="0" value={logDuration} onChange={(e) => setLogDuration(e.target.value)} placeholder="mm" className="w-16" />
+                            <span className="text-xs" style={{ color: MUTED }}>min</span>
+                            <PrimaryBtn
+                              onClick={() => addTimeEntry(t.catId, t.subId, t.id, (Number(logHours) || 0) * 60 + (Number(logDuration) || 0))}
+                              style={{ background: MOSS, padding: "5px 10px" }}
+                            >
+                              Add
+                            </PrimaryBtn>
                           </div>
                         </td>
                       </tr>

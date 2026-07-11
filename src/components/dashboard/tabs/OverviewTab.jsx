@@ -138,6 +138,7 @@ export default function OverviewTab({
 
       <Card className="p-5">
         <SectionLabel>Category-wise completion rate</SectionLabel>
+        {categoryCompletion.length === 0 && <EmptyNote text="No tasks in this period." />}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {categoryCompletion.map((c) => (
             <div key={c.name}>
