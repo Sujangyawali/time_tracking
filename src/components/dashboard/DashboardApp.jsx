@@ -162,9 +162,10 @@ export default function DashboardApp() {
           t.name = form.name;
           t.estMinutes = Number(form.est) || 0;
           t.date = form.date;
+          t.description = form.description || "";
         }
       } else {
-        s.tasks.push({ id: buildId("t"), name: form.name, estMinutes: Number(form.est) || 0, status: "Pending", date: form.date, entries: [] });
+        s.tasks.push({ id: buildId("t"), name: form.name, estMinutes: Number(form.est) || 0, status: "Pending", date: form.date, description: form.description || "", entries: [] });
       }
       return cats;
     });

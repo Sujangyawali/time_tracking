@@ -35,7 +35,7 @@ export default function TasksTab({
       alert("Add a category and sub-category first.");
       return;
     }
-    setTaskForm({ catId: firstCat.id, subId: firstSub.id, name: "", est: "", date: TODAY, editingTaskId: null });
+    setTaskForm({ catId: firstCat.id, subId: firstSub.id, name: "", est: "", date: TODAY, description: "", editingTaskId: null });
   };
 
   return (
@@ -91,6 +91,7 @@ export default function TasksTab({
             <TinyInput placeholder="Task name" value={taskForm.name} onChange={(e) => setTaskForm({ ...taskForm, name: e.target.value })} className="flex-1 min-w-[160px]" />
             <TinyInput type="number" placeholder="Est. minutes" value={taskForm.est} onChange={(e) => setTaskForm({ ...taskForm, est: e.target.value })} className="w-32" />
             <TinyInput type="date" value={taskForm.date} onChange={(e) => setTaskForm({ ...taskForm, date: e.target.value })} className="w-40" />
+            <TinyInput placeholder="Description (optional)" value={taskForm.description || ""} onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })} className="w-full" />
             <PrimaryBtn onClick={() => taskForm.name.trim() && upsertTask({ ...taskForm, name: taskForm.name.trim() })}><Check size={14} /> Save</PrimaryBtn>
             <IconBtn onClick={() => setTaskForm(null)}><X size={16} /></IconBtn>
           </div>
@@ -108,12 +109,13 @@ export default function TasksTab({
                 <th className="p-3 font-medium">Est.</th>
                 <th className="p-3 font-medium">Actual</th>
                 <th className="p-3 font-medium">Status</th>
+                <th className="p-3 font-medium">Description</th>
                 <th className="p-3 font-medium text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {visibleTasks.length === 0 && (
-                <tr><td colSpan={7} className="p-6 text-center" style={{ color: MUTED }}>No tasks match these filters.</td></tr>
+                <tr><td colSpan={8} className="p-6 text-center" style={{ color: MUTED }}>No tasks match these filters.</td></tr>
               )}
               {visibleTasks.map((t) => {
                 const actual = t.entries.reduce((s, e) => s + e.duration, 0);
@@ -140,18 +142,21 @@ export default function TasksTab({
                           <option>Pending</option><option>In Progress</option><option>Completed</option>
                         </TinySelect>
                       </td>
+                      <td className="p-3 text-xs max-w-[220px] truncate" title={t.description || ""} style={{ color: t.description ? INK : MUTED }}>
+                        {t.description || "—"}
+                      </td>
                       <td className="p-3">
                         <div className="flex justify-end gap-0.5">
                           <IconBtn title="Log time" onClick={() => setLogEntryFor(logEntryFor === t.id ? null : t.id)}><Clock size={14} /></IconBtn>
                           <IconBtn title="Duplicate" onClick={() => duplicateTask(t.catId, t.subId, t.id)}><Copy size={14} /></IconBtn>
-                          <IconBtn title="Edit" onClick={() => setTaskForm({ catId: t.catId, subId: t.subId, name: t.name, est: t.estMinutes, date: t.date, editingTaskId: t.id })}><Pencil size={14} /></IconBtn>
+                          <IconBtn title="Edit" onClick={() => setTaskForm({ catId: t.catId, subId: t.subId, name: t.name, est: t.estMinutes, date: t.date, description: t.description || "", editingTaskId: t.id })}><Pencil size={14} /></IconBtn>
                           <IconBtn title="Delete" danger onClick={() => deleteTask(t.catId, t.subId, t.id)}><Trash2 size={14} /></IconBtn>
                         </div>
                       </td>
                     </tr>
                     {logEntryFor === t.id && (
                       <tr className="border-b" style={{ borderColor: LINE, background: "#FBF9F5" }}>
-                        <td colSpan={7} className="p-3">
+                        <td colSpan={8} className="p-3">
                           <div className="flex items-center gap-2">
                             <Play size={13} style={{ color: MOSS }} />
                             <span className="text-xs" style={{ color: MUTED }}>Log time spent:</span>
@@ -171,7 +176,7 @@ export default function TasksTab({
                     )}
                     {isOpen && (
                       <tr className="border-b" style={{ borderColor: LINE, background: "#FBF9F5" }}>
-                        <td colSpan={7} className="p-3">
+                        <td colSpan={8} className="p-3">
                           {t.entries.length === 0 ? (
                             <span className="text-xs" style={{ color: MUTED }}>No time entries logged for this task yet.</span>
                           ) : (
