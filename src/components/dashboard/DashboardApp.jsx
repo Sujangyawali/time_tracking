@@ -307,6 +307,8 @@ export default function DashboardApp() {
     if (!window.confirm("Clear all tracked data and start fresh from today? This cannot be undone.")) return;
     setCategories([]);
     writeDashboardData([]);
+    setEvents([]);
+    writeEvents([]);
     setDrilldownCatId(null);
     setTaskForm(null);
     setActiveTab("overview");
@@ -318,8 +320,12 @@ export default function DashboardApp() {
     if (!file) return;
     try {
       const data = await importDashboardData(file);
-      setCategories(pruneOldData(data));
-      writeDashboardData(pruneOldData(data));
+      const importedCategories = pruneOldData(Array.isArray(data) ? data : data?.categories || []);
+      const importedEvents = Array.isArray(data) ? [] : data?.events || [];
+      setCategories(importedCategories);
+      writeDashboardData(importedCategories);
+      setEvents(importedEvents);
+      writeEvents(importedEvents);
     } catch {
       alert("Could not import the selected JSON file.");
     } finally {
@@ -595,7 +601,7 @@ export default function DashboardApp() {
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
-            <PrimaryBtn onClick={() => exportDashboardData(categories)} style={{ background: MOSS, padding: "7px 10px" }}>Export JSON</PrimaryBtn>
+            <PrimaryBtn onClick={() => exportDashboardData({ categories, events })} style={{ background: MOSS, padding: "7px 10px" }}>Export JSON</PrimaryBtn>
             <PrimaryBtn onClick={() => fileInputRef.current?.click()} style={{ background: "#4C6B72", padding: "7px 10px" }}>Import JSON</PrimaryBtn>
             <input ref={fileInputRef} type="file" accept="application/json" className="hidden" onChange={handleImport} />
           </div>
