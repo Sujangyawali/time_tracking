@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Plus, Trash2, Pencil, ChevronDown, ChevronRight, X, Check, Clock, Play, AlertTriangle, Copy } from "lucide-react";
 import { Card, SectionLabel, TinyInput, TinySelect, MultiSelect, PrimaryBtn, IconBtn } from "../shared";
-import { fmtHrs, fmtShort, TODAY } from "../../../lib/dateUtils";
+import { addDays, fmtHrs, fmtShort, TODAY } from "../../../lib/dateUtils";
 import { CLAY, LINE, MOSS, MUTED, INK } from "../../../styles/dashboardTheme";
 
 export default function TasksTab({
@@ -16,6 +16,7 @@ export default function TasksTab({
   const getDateBounds = () => {
     if (taskDateFilter === "all") return { start: "0000-01-01", end: "9999-12-31" };
     if (taskDateFilter === "today") return { start: TODAY, end: TODAY };
+    if (taskDateFilter === "tomorrow") return { start: addDays(TODAY, 1), end: addDays(TODAY, 1) };
     if (taskDateFilter === "7d") return { start: new Date(new Date(TODAY).setDate(new Date(TODAY).getDate() - 6)).toISOString().split('T')[0], end: TODAY };
     if (taskDateFilter === "30d") return { start: new Date(new Date(TODAY).setDate(new Date(TODAY).getDate() - 29)).toISOString().split('T')[0], end: TODAY };
     if (taskDateFilter === "custom") return { start: taskStartDate || TODAY, end: taskEndDate || TODAY };
@@ -61,6 +62,7 @@ export default function TasksTab({
         <TinySelect value={taskDateFilter} onChange={(e) => setTaskDateFilter(e.target.value)}>
           <option value="all">All dates</option>
           <option value="today">Today</option>
+          <option value="tomorrow">Tomorrow</option>
           <option value="7d">Last 7 days</option>
           <option value="30d">Last 30 days</option>
           <option value="custom">Custom range</option>

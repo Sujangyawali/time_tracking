@@ -5,7 +5,7 @@ import TasksTab from "./tabs/TasksTab";
 import EventsTab from "./tabs/EventsTab";
 import TrendsTab from "./tabs/TrendsTab";
 import { buildDemoDataFinal } from "../../data/demoData";
-import { daysAgo, daysAgoStr, dowMonday, fmtHrs, fmtShort, TODAY, toDateStr } from "../../lib/dateUtils";
+import { addDays, daysAgo, daysAgoStr, dowMonday, fmtHrs, fmtShort, TODAY, toDateStr } from "../../lib/dateUtils";
 import { exportDashboardData, importDashboardData, readDashboardData, writeDashboardData, DASHBOARD_STORAGE_KEY, readEvents, writeEvents } from "../../lib/storage";
 import { AMBER, CLAY, INK, LINE, MOSS, MUTED, PALETTE, PAPER } from "../../styles/dashboardTheme";
 import { Card, IconBtn, PrimaryBtn, SectionLabel, TinyInput } from "./shared";
@@ -65,7 +65,7 @@ export default function DashboardApp() {
   const [taskForm, setTaskForm] = useState(null);
   const [taskFilterCat, setTaskFilterCat] = useState([]);
   const [taskFilterStatus, setTaskFilterStatus] = useState([]);
-  const [taskDateFilter, setTaskDateFilter] = useState("all");
+  const [taskDateFilter, setTaskDateFilter] = useState("today");
   const [taskStartDate, setTaskStartDate] = useState(TODAY);
   const [taskEndDate, setTaskEndDate] = useState(TODAY);
   const [nepalTime, setNepalTime] = useState(new Date());
@@ -76,9 +76,17 @@ export default function DashboardApp() {
     return saved >= SIDEBAR_MIN_WIDTH && saved <= SIDEBAR_MAX_WIDTH ? saved : 300;
   });
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
+  const [toast, setToast] = useState(null);
   const saveTimer = useRef(null);
   const fileInputRef = useRef(null);
   const sidebarContainerRef = useRef(null);
+  const toastTimer = useRef(null);
+
+  const showToast = (message) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ id: buildId("toast"), message });
+    toastTimer.current = setTimeout(() => setToast(null), 2500);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -233,6 +241,8 @@ export default function DashboardApp() {
   };
 
   const duplicateTask = (catId, subId, taskId) => {
+    const sourceTask = categories.find((item) => item.id === catId)?.subcategories.find((item) => item.id === subId)?.tasks.find((item) => item.id === taskId);
+    if (!sourceTask) return;
     updateCategories((cats) => {
       const s = cats.find((item) => item.id === catId)?.subcategories.find((item) => item.id === subId);
       const taskToCopy = s?.tasks.find((item) => item.id === taskId);
@@ -241,12 +251,13 @@ export default function DashboardApp() {
       s.tasks.push({
         ...taskToCopy,
         id: buildId("t"),
-        name: `${taskToCopy.name} (Copy)`,
+        date: addDays(taskToCopy.date, 1),
         status: "Pending",
         entries: [],
       });
       return cats;
     });
+    showToast(`"${sourceTask.name}" added for tomorrow`);
   };
 
   const setTaskStatus = (catId, subId, taskId, status) => {
@@ -512,6 +523,8 @@ export default function DashboardApp() {
         .mono-num { font-family: 'IBM Plex Mono', monospace; }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-thumb { background: ${LINE}; border-radius: 4px; }
+        @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes toast-out { from { opacity: 1; } to { opacity: 0; } }
       `}</style>
 
       <div ref={sidebarContainerRef} className="flex flex-col lg:flex-row max-w-[1400px] mx-auto">
@@ -656,6 +669,28 @@ export default function DashboardApp() {
           )}
         </main>
       </div>
+
+      {toast && (
+        <div
+          key={toast.id}
+          style={{
+            position: "fixed",
+            bottom: 20,
+            right: 20,
+            background: INK,
+            color: "#fff",
+            padding: "10px 16px",
+            borderRadius: 10,
+            fontSize: 13,
+            fontWeight: 500,
+            boxShadow: "0 4px 16px rgba(0,0,0,0.18)",
+            zIndex: 50,
+            animation: "toast-in 0.2s ease, toast-out 0.2s ease 2.3s forwards",
+          }}
+        >
+          {toast.message}
+        </div>
+      )}
     </div>
   );
 }
