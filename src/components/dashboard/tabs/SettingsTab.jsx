@@ -2,6 +2,7 @@ import React from "react";
 import { Download, Upload, Plus, RotateCcw } from "lucide-react";
 import { Card, SectionLabel, TinyInput, TinySelect, PrimaryBtn } from "../shared";
 import { MUTED, LINE, CLAY, MOSS } from "../../../styles/dashboardTheme";
+import ThemeToggle from "../ThemeToggle";
 
 const COMMON_TIMEZONES = [
   "Asia/Kathmandu", "Asia/Kolkata", "Asia/Dhaka", "Asia/Karachi", "Asia/Dubai",
@@ -13,9 +14,19 @@ const COMMON_TIMEZONES = [
 const TIMEZONE_OPTIONS =
   typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : COMMON_TIMEZONES;
 
-export default function SettingsTab({ settings, updateSetting, onExport, onImportClick, loadDemoData, resetData }) {
+export default function SettingsTab({ settings, updateSetting, toggleTheme, onExport, onImportClick, loadDemoData, resetData }) {
   return (
     <div className="space-y-4 max-w-2xl">
+      <Card className="p-4">
+        <SectionLabel>Appearance</SectionLabel>
+        <div className="flex items-center justify-between">
+          <p className="text-xs" style={{ color: MUTED }}>
+            {settings.theme === "dark" ? "Dark mode is on." : "Light mode is on."}
+          </p>
+          <ThemeToggle theme={settings.theme} onToggle={toggleTheme} />
+        </div>
+      </Card>
+
       <Card className="p-4">
         <SectionLabel>Data Retention</SectionLabel>
         <p className="text-xs mb-3" style={{ color: MUTED }}>

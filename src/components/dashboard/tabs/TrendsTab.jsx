@@ -3,7 +3,7 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend
 import { AlertTriangle } from "lucide-react";
 import { Card, SectionLabel, EmptyNote } from "../shared";
 import { fmtHrs, fmtShort } from "../../../lib/dateUtils";
-import { AMBER, CLAY, INK, LINE, MOSS, MUTED } from "../../../styles/dashboardTheme";
+import { AMBER, CLAY, INK, LINE, MOSS, MUTED, SURFACE, TINT, TINT_SOFT } from "../../../styles/dashboardTheme";
 
 export default function TrendsTab({
   trendData, trendRange, setTrendRange, completionTrend, weeklyComparison,
@@ -41,7 +41,7 @@ export default function TrendsTab({
                   {estVsActualTasks.map((t) => {
                     const over = t.variance > 0;
                     return (
-                      <div key={t.id} className="flex items-center justify-between text-sm px-3 py-2 rounded-lg" style={{ background: "#FBF9F5" }}>
+                      <div key={t.id} className="flex items-center justify-between text-sm px-3 py-2 rounded-lg" style={{ background: TINT_SOFT }}>
                         <div className="min-w-0 mr-2">
                           <div className="font-medium truncate">{t.name}</div>
                           <div className="text-[11px]" style={{ color: MUTED }}>{fmtHrs(t.estMinutes)} est · {fmtHrs(t.actual)} actual</div>
@@ -62,10 +62,10 @@ export default function TrendsTab({
       <Card className="p-5">
         <div className="flex items-center justify-between mb-1">
           <SectionLabel>Daily hours logged</SectionLabel>
-          <div className="flex gap-1 p-1 rounded-lg" style={{ background: "#EFEAE0" }}>
+          <div className="flex gap-1 p-1 rounded-lg" style={{ background: TINT }}>
             {[7, 30, 90].map((n) => (
               <button key={n} onClick={() => setTrendRange(n)} className="px-2.5 py-1 rounded-md text-xs font-medium"
-                style={{ background: trendRange === n ? "#fff" : "transparent", color: trendRange === n ? INK : MUTED }}>
+                style={{ background: trendRange === n ? SURFACE : "transparent", color: trendRange === n ? INK : MUTED }}>
                 {n}d
               </button>
             ))}
@@ -153,7 +153,7 @@ export default function TrendsTab({
         ) : (
           <div className="space-y-2">
             {overdueTasks.map((t) => (
-              <div key={t.id} className="flex items-center justify-between text-sm px-3 py-2 rounded-lg" style={{ background: "#FBF1EF" }}>
+              <div key={t.id} className="flex items-center justify-between text-sm px-3 py-2 rounded-lg" style={{ background: `${CLAY}22` }}>
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ background: t.catColor }} />
                   <span className="font-medium truncate">{t.name}</span>

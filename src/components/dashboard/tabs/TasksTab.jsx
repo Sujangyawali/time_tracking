@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Plus, Trash2, Pencil, ChevronDown, ChevronRight, X, Check, Clock, Play, Square, AlertTriangle, Copy } from "lucide-react";
 import { Card, SectionLabel, TinyInput, TinySelect, MultiSelect, PrimaryBtn, IconBtn } from "../shared";
 import { addDays, fmtHrs, fmtShort, TODAY } from "../../../lib/dateUtils";
-import { CLAY, LINE, MOSS, MUTED, INK } from "../../../styles/dashboardTheme";
+import { AMBER, CLAY, LINE, MOSS, MUTED, INK, TINT, TINT_SOFT } from "../../../styles/dashboardTheme";
 
 export default function TasksTab({
   categories, flatTasks, taskForm, setTaskForm, upsertTask, deleteTask, duplicateTask, setTaskStatus,
@@ -128,7 +128,7 @@ export default function TasksTab({
                 const isTiming = activeTimerTaskId === t.id;
                 return (
                   <React.Fragment key={t.id}>
-                    <tr className="border-b hover:bg-black/[0.02]" style={{ borderColor: LINE, background: isTiming ? "#FCF3DE" : undefined }}>
+                    <tr className="border-b hover:bg-black/[0.02]" style={{ borderColor: LINE, background: isTiming ? `${AMBER}22` : undefined }}>
                       <td className="p-3">
                         <button onClick={() => toggleExpand(`task_${t.id}`)} className="flex items-center gap-1.5 text-left">
                           {isOpen ? <ChevronDown size={13} style={{ color: MUTED }} /> : <ChevronRight size={13} style={{ color: MUTED }} />}
@@ -170,7 +170,7 @@ export default function TasksTab({
                       </td>
                     </tr>
                     {logEntryFor === t.id && (
-                      <tr className="border-b" style={{ borderColor: LINE, background: "#FBF9F5" }}>
+                      <tr className="border-b" style={{ borderColor: LINE, background: TINT_SOFT }}>
                         <td colSpan={8} className="p-3">
                           <div className="flex items-center gap-2">
                             <Play size={13} style={{ color: MOSS }} />
@@ -190,14 +190,14 @@ export default function TasksTab({
                       </tr>
                     )}
                     {isOpen && (
-                      <tr className="border-b" style={{ borderColor: LINE, background: "#FBF9F5" }}>
+                      <tr className="border-b" style={{ borderColor: LINE, background: TINT_SOFT }}>
                         <td colSpan={8} className="p-3">
                           {t.entries.length === 0 ? (
                             <span className="text-xs" style={{ color: MUTED }}>No time entries logged for this task yet.</span>
                           ) : (
                             <div className="flex flex-wrap gap-2">
                               {t.entries.map((e) => (
-                                <div key={e.id} className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-full" style={{ background: "#EFEAE0" }}>
+                                <div key={e.id} className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-full" style={{ background: TINT }}>
                                   <span>{fmtHrs(e.duration)}</span>
                                   <span style={{ color: MUTED }}>· {new Date(e.timestamp).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
                                   <button onClick={() => deleteEntry(t.catId, t.subId, t.id, e.id)}><X size={12} style={{ color: MUTED }} /></button>

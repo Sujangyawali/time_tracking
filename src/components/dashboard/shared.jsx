@@ -129,7 +129,7 @@ export function MultiSelect({ options, selected, onChange, placeholder = "All" }
 
 export function PrimaryBtn({ onClick, children, style }) {
   return (
-    <button onClick={onClick} className="px-3 py-1.5 rounded-lg text-sm font-medium text-white flex items-center gap-1.5 hover:opacity-90 transition-opacity" style={{ background: INK, ...style }}>
+    <button onClick={onClick} className="px-3 py-1.5 rounded-lg text-sm font-medium text-white flex items-center gap-1.5 hover:opacity-90 transition-opacity" style={{ background: "#23241F", ...style }}>
       {children}
     </button>
   );

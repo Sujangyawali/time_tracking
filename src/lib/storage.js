@@ -7,6 +7,7 @@ export const DEFAULT_SETTINGS = {
   retentionDays: 90,
   timezone: "Asia/Kathmandu",
   lastActiveTab: "overview",
+  theme: "light",
 };
 
 export function readDashboardData() {

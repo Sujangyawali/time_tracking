@@ -3,7 +3,7 @@ import { Play, Square } from "lucide-react";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { Card, SectionLabel, StatBlock, ProgressRing, EmptyNote, IconBtn } from "../shared";
 import { fmtHrs } from "../../../lib/dateUtils";
-import { AMBER, CLAY, INK, LINE, MOSS } from "../../../styles/dashboardTheme";
+import { AMBER, CLAY, INK, LINE, MOSS, MUTED, SURFACE } from "../../../styles/dashboardTheme";
 
 export default function OverviewTab({
   totalMinutes, completedCount, remainingCount, completionPct, avgPerTask, idleMinutes, todayMinutes,
@@ -30,7 +30,7 @@ export default function OverviewTab({
         <Card className="p-5 flex flex-col items-center justify-center">
           <SectionLabel>Completion rate</SectionLabel>
           <ProgressRing percent={completionPct} />
-          <div className="text-xs mt-2" style={{ color: "#74786F" }}>{completedCount} of {completedCount + remainingCount} tasks done</div>
+          <div className="text-xs mt-2" style={{ color: MUTED }}>{completedCount} of {completedCount + remainingCount} tasks done</div>
         </Card>
 
         <Card className="p-5 lg:col-span-2">
@@ -48,7 +48,7 @@ export default function OverviewTab({
                     cursor="pointer"
                   >
                     {categoryBreakdown.map((c) => (
-                      <Cell key={c.id} fill={c.color} stroke={c.id === drilldownCatId ? INK : "#fff"} strokeWidth={c.id === drilldownCatId ? 2 : 1} />
+                      <Cell key={c.id} fill={c.color} stroke={c.id === drilldownCatId ? INK : SURFACE} strokeWidth={c.id === drilldownCatId ? 2 : 1} />
                     ))}
                   </Pie>
                   <Tooltip formatter={(v) => fmtHrs(v)} contentStyle={{ borderRadius: 8, borderColor: LINE, fontSize: 12 }} />
@@ -69,7 +69,7 @@ export default function OverviewTab({
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={subBreakdown} layout="vertical" margin={{ left: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke={LINE} horizontal={false} />
-                    <XAxis type="number" tickFormatter={(v) => `${Math.round(v / 60)}h`} tick={{ fontSize: 11, fill: "#74786F" }} />
+                    <XAxis type="number" tickFormatter={(v) => `${Math.round(v / 60)}h`} tick={{ fontSize: 11, fill: MUTED }} />
                     <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 12, fill: INK }} />
                     <Tooltip formatter={(v) => fmtHrs(v)} contentStyle={{ borderRadius: 8, borderColor: LINE, fontSize: 12 }} />
                     <Bar dataKey="minutes" fill={drilldownCat.color} radius={[0, 6, 6, 0]} />
@@ -93,7 +93,7 @@ export default function OverviewTab({
                     <div className="h-1.5 rounded-full" style={{ width: `${(c.minutes / topThree[0].minutes) * 100}%`, background: c.color }} />
                   </div>
                 </div>
-                <div className="text-xs shrink-0" style={{ color: "#74786F" }}>{fmtHrs(c.minutes)}</div>
+                <div className="text-xs shrink-0" style={{ color: MUTED }}>{fmtHrs(c.minutes)}</div>
               </div>
             ))}
           </div>
@@ -110,9 +110,9 @@ export default function OverviewTab({
                   <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0" style={{ background: t.catColor + "22", color: t.catColor }}>{i + 1}</div>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium truncate">{t.name}</div>
-                    <div className="text-[11px] truncate" style={{ color: "#74786F" }}>{t.catName}</div>
+                    <div className="text-[11px] truncate" style={{ color: MUTED }}>{t.catName}</div>
                   </div>
-                  <div className="text-xs shrink-0" style={{ color: "#74786F" }}>{fmtHrs(t.minutes)}</div>
+                  <div className="text-xs shrink-0" style={{ color: MUTED }}>{fmtHrs(t.minutes)}</div>
                   <TimerBtn task={t} />
                 </div>
               ))}
@@ -132,9 +132,9 @@ export default function OverviewTab({
                   <div className="space-y-1.5 ml-3.5">
                     {g.tasks.map((t) => (
                       <div key={t.id} className="flex items-center justify-between text-sm">
-                        <span className="truncate mr-2" style={{ color: "#3d3e38" }}>{t.name}</span>
+                        <span className="truncate mr-2" style={{ color: INK }}>{t.name}</span>
                         <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-xs" style={{ color: "#74786F" }}>{fmtHrs(t.minutes)}</span>
+                          <span className="text-xs" style={{ color: MUTED }}>{fmtHrs(t.minutes)}</span>
                           <TimerBtn task={t} />
                         </div>
                       </div>
@@ -155,12 +155,12 @@ export default function OverviewTab({
             <div key={c.name}>
               <div className="flex justify-between text-sm mb-1">
                 <span className="font-medium flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: c.color }} />{c.name}</span>
-                <span className="text-xs" style={{ color: "#74786F" }}>{c.pct}%</span>
+                <span className="text-xs" style={{ color: MUTED }}>{c.pct}%</span>
               </div>
               <div className="h-2 rounded-full" style={{ background: LINE }}>
                 <div className="h-2 rounded-full" style={{ width: `${c.pct}%`, background: c.color }} />
               </div>
-              <div className="text-[11px] mt-1" style={{ color: "#74786F" }}>{c.done} of {c.total} tasks</div>
+              <div className="text-[11px] mt-1" style={{ color: MUTED }}>{c.done} of {c.total} tasks</div>
             </div>
           ))}
         </div>

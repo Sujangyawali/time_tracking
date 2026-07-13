@@ -19,7 +19,7 @@ export default function TimerIndicator({ taskName, startedAt, onStop }) {
   return (
     <div
       className="flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-medium"
-      style={{ background: stale ? "#F7E9E4" : "#FCF3DE", color }}
+      style={{ background: stale ? `${CLAY}22` : `${AMBER}22`, color }}
     >
       {stale ? <AlertTriangle size={15} /> : <Timer size={15} className="animate-pulse" />}
       <span className="truncate max-w-[160px]" style={{ color: "inherit" }}>{taskName}</span>

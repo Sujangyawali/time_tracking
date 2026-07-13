@@ -22,10 +22,13 @@ export const PALETTE = [
   "#4E7D8A",
   "#C17A4D",
 ];
-export const INK = "#23241F";
-export const MUTED = "#74786F";
-export const PAPER = "#F7F4EE";
-export const LINE = "#E5DFD3";
+export const INK = "var(--color-ink)";
+export const MUTED = "var(--color-muted)";
+export const PAPER = "var(--color-paper)";
+export const LINE = "var(--color-line)";
+export const SURFACE = "var(--color-surface)";
+export const TINT = "var(--color-surface-tint)";
+export const TINT_SOFT = "var(--color-surface-tint-soft)";
 export const AMBER = "#D98E3D";
 export const MOSS = "#5C7A5E";
 export const CLAY = "#B85C4A";

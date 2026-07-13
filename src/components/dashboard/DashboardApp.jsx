@@ -6,10 +6,11 @@ import EventsTab from "./tabs/EventsTab";
 import TrendsTab from "./tabs/TrendsTab";
 import SettingsTab from "./tabs/SettingsTab";
 import TimerIndicator from "./TimerIndicator";
+import ThemeToggle from "./ThemeToggle";
 import { buildDemoDataFinal } from "../../data/demoData";
 import { addDays, daysAgo, daysAgoStr, dowMonday, fmtHrs, fmtShort, TODAY, toDateStr } from "../../lib/dateUtils";
 import { exportDashboardData, importDashboardData, readDashboardData, writeDashboardData, DASHBOARD_STORAGE_KEY, readEvents, writeEvents, readActiveTimer, writeActiveTimer } from "../../lib/storage";
-import { AMBER, CLAY, INK, LINE, MUTED, PALETTE, PAPER } from "../../styles/dashboardTheme";
+import { AMBER, CLAY, INK, LINE, MUTED, PALETTE, PAPER, SURFACE, TINT } from "../../styles/dashboardTheme";
 import { Card, IconBtn, PrimaryBtn, SectionLabel, TinyInput } from "./shared";
 import { addTaskTimeEntry, computeElapsedMinutes, isTimerStale } from "../../lib/taskEntryUtils";
 import { useSettings } from "../../hooks/useSettings";
@@ -122,6 +123,10 @@ export default function DashboardApp() {
   useEffect(() => {
     writeActiveTimer(activeTimer);
   }, [activeTimer]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", settings.theme);
+  }, [settings.theme]);
 
   useEffect(() => {
     if (!storageReady || !activeTimer) return;
@@ -566,6 +571,8 @@ export default function DashboardApp() {
     updateSetting("lastActiveTab", tab);
   };
 
+  const toggleTheme = () => updateSetting("theme", settings.theme === "dark" ? "light" : "dark");
+
   const runningTask = activeTimer ? findTask(activeTimer.catId, activeTimer.subId, activeTimer.taskId) : null;
 
   const nepalTimeLabel = useMemo(() => {
@@ -632,7 +639,7 @@ export default function DashboardApp() {
           <div className="space-y-1">
             {categories.map((cat) => (
               <div key={cat.id} className="mb-2">
-                <div className="group flex items-center gap-1.5 rounded-lg px-2 py-1.5 cursor-pointer" style={{ background: drilldownCatId === cat.id ? "#EFEAE0" : "transparent" }} onClick={() => setDrilldownCatId(cat.id === drilldownCatId ? null : cat.id)}>
+                <div className="group flex items-center gap-1.5 rounded-lg px-2 py-1.5 cursor-pointer" style={{ background: drilldownCatId === cat.id ? TINT : "transparent" }} onClick={() => setDrilldownCatId(cat.id === drilldownCatId ? null : cat.id)}>
                   <button onClick={(e) => { e.stopPropagation(); toggleExpand(cat.id); }} className="p-0.5" style={{ color: MUTED }}>
                     {expanded[cat.id] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                   </button>
@@ -657,7 +664,7 @@ export default function DashboardApp() {
                         {editing?.type === "sub" && editing.id === sub.id ? (
                           <input autoFocus value={editing.value} onChange={(e) => setEditing({ ...editing, value: e.target.value })} onKeyDown={(e) => { if (e.key === "Enter") { renameSubcategory(cat.id, sub.id, editing.value); setEditing(null); } if (e.key === "Escape") setEditing(null); }} className="text-[13px] flex-1 border-b outline-none bg-transparent" style={{ borderColor: AMBER }} />
                         ) : (
-                          <span className="text-[13px] flex-1 truncate" style={{ color: "#3d3e38" }}>{sub.name}</span>
+                          <span className="text-[13px] flex-1 truncate" style={{ color: INK }}>{sub.name}</span>
                         )}
                         <span className="text-[10px] mono-num" style={{ color: MUTED }}>{sub.tasks.length}</span>
                         <div className="opacity-0 group-hover:opacity-100 flex">
@@ -707,17 +714,17 @@ export default function DashboardApp() {
         <main className="flex-1 p-5 min-w-0">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
             <div className="flex items-center gap-2">
-              <div className="flex gap-1 p-1 rounded-xl" style={{ background: "#EFEAE0" }}>
+              <div className="flex gap-1 p-1 rounded-xl" style={{ background: TINT }}>
               {[['overview', 'Overview'], ['tasks', 'Tasks'], ['events', 'Events'], ['trends', 'Trends & Insights'], ['settings', 'Settings']].map(([k, label]) => (
-                <button key={k} onClick={() => changeTab(k)} className="px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors" style={{ background: activeTab === k ? "#fff" : "transparent", color: activeTab === k ? INK : MUTED }}>{label}</button>
+                <button key={k} onClick={() => changeTab(k)} className="px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors" style={{ background: activeTab === k ? SURFACE : "transparent", color: activeTab === k ? INK : MUTED }}>{label}</button>
               ))}
             </div>
 
               {activeTab === 'overview' && (
                 <div className="flex flex-wrap items-center gap-2">
-                  <div className="flex gap-1 p-1 rounded-xl" style={{ background: "#EFEAE0" }}>
+                  <div className="flex gap-1 p-1 rounded-xl" style={{ background: TINT }}>
                     {[['today', 'Today'], ['7d', '7 Days'], ['30d', '30 Days'], ['custom', 'Custom'], ['all', 'All']].map(([k, label]) => (
-                      <button key={k} onClick={() => setDateFilter(k)} className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors" style={{ background: dateFilter === k ? "#fff" : "transparent", color: dateFilter === k ? INK : MUTED }}>{label}</button>
+                      <button key={k} onClick={() => setDateFilter(k)} className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors" style={{ background: dateFilter === k ? SURFACE : "transparent", color: dateFilter === k ? INK : MUTED }}>{label}</button>
                     ))}
                   </div>
                   {dateFilter === 'custom' && (
@@ -742,6 +749,7 @@ export default function DashboardApp() {
               <div className="text-sm font-medium" style={{ color: MUTED }}>
                 <span style={{ color: INK }}>{nepalTimeLabel}</span>
               </div>
+              <ThemeToggle theme={settings.theme} onToggle={toggleTheme} />
             </div>
           </div>
 
@@ -765,6 +773,7 @@ export default function DashboardApp() {
             <SettingsTab
               settings={settings}
               updateSetting={updateSetting}
+              toggleTheme={toggleTheme}
               onExport={() => exportDashboardData({ categories, events })}
               onImportClick={() => fileInputRef.current?.click()}
               loadDemoData={loadDemoData}
@@ -781,7 +790,7 @@ export default function DashboardApp() {
             position: "fixed",
             bottom: 20,
             right: 20,
-            background: INK,
+            background: "#23241F",
             color: "#fff",
             padding: "10px 16px",
             borderRadius: 10,
