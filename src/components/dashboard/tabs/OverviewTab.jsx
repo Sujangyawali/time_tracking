@@ -1,14 +1,21 @@
 import React from "react";
+import { Play, Square } from "lucide-react";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
-import { Card, SectionLabel, StatBlock, ProgressRing, EmptyNote } from "../shared";
+import { Card, SectionLabel, StatBlock, ProgressRing, EmptyNote, IconBtn } from "../shared";
 import { fmtHrs } from "../../../lib/dateUtils";
 import { AMBER, CLAY, INK, LINE, MOSS } from "../../../styles/dashboardTheme";
 
 export default function OverviewTab({
   totalMinutes, completedCount, remainingCount, completionPct, avgPerTask, idleMinutes, todayMinutes,
   categoryBreakdown, topThree, drilldownCatId, setDrilldownCatId, subBreakdown, categories, categoryCompletion,
-  topFiveTasks, topTwoPerCategory,
+  topFiveTasks, topTwoPerCategory, activeTimerTaskId, startTimer, stopTimer,
 }) {
+  const TimerBtn = ({ task }) =>
+    activeTimerTaskId === task.id ? (
+      <IconBtn title="Stop timer" danger onClick={stopTimer}><Square size={13} fill="currentColor" /></IconBtn>
+    ) : (
+      <IconBtn title="Start timer" onClick={() => startTimer(task.catId, task.subId, task.id)}><Play size={13} style={{ color: MOSS }} /></IconBtn>
+    );
   const drilldownCat = categories.find((c) => c.id === drilldownCatId);
   return (
     <div className="space-y-5">
@@ -106,6 +113,7 @@ export default function OverviewTab({
                     <div className="text-[11px] truncate" style={{ color: "#74786F" }}>{t.catName}</div>
                   </div>
                   <div className="text-xs shrink-0" style={{ color: "#74786F" }}>{fmtHrs(t.minutes)}</div>
+                  <TimerBtn task={t} />
                 </div>
               ))}
             </div>
@@ -125,7 +133,10 @@ export default function OverviewTab({
                     {g.tasks.map((t) => (
                       <div key={t.id} className="flex items-center justify-between text-sm">
                         <span className="truncate mr-2" style={{ color: "#3d3e38" }}>{t.name}</span>
-                        <span className="text-xs shrink-0" style={{ color: "#74786F" }}>{fmtHrs(t.minutes)}</span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-xs" style={{ color: "#74786F" }}>{fmtHrs(t.minutes)}</span>
+                          <TimerBtn task={t} />
+                        </div>
                       </div>
                     ))}
                   </div>

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Plus, Trash2, Pencil, ChevronDown, ChevronRight, X, Check, Clock, Play, AlertTriangle, Copy } from "lucide-react";
+import { Plus, Trash2, Pencil, ChevronDown, ChevronRight, X, Check, Clock, Play, Square, AlertTriangle, Copy } from "lucide-react";
 import { Card, SectionLabel, TinyInput, TinySelect, MultiSelect, PrimaryBtn, IconBtn } from "../shared";
 import { addDays, fmtHrs, fmtShort, TODAY } from "../../../lib/dateUtils";
 import { CLAY, LINE, MOSS, MUTED, INK } from "../../../styles/dashboardTheme";
@@ -9,6 +9,7 @@ export default function TasksTab({
   logEntryFor, setLogEntryFor, logHours, setLogHours, logDuration, setLogDuration, addTimeEntry, deleteEntry,
   taskFilterCat, setTaskFilterCat, taskFilterStatus, setTaskFilterStatus, expanded, toggleExpand,
   taskDateFilter, setTaskDateFilter, taskStartDate, setTaskStartDate, taskEndDate, setTaskEndDate,
+  activeTimerTaskId, startTimer, stopTimer,
 }) {
   const allSubs = (catId) => categories.find((c) => c.id === catId)?.subcategories || [];
   const [expandedDesc, setExpandedDesc] = useState({});
@@ -124,9 +125,10 @@ export default function TasksTab({
                 const actual = t.entries.reduce((s, e) => s + e.duration, 0);
                 const isOverdue = t.date < TODAY && t.status !== "Completed";
                 const isOpen = expanded[`task_${t.id}`];
+                const isTiming = activeTimerTaskId === t.id;
                 return (
                   <React.Fragment key={t.id}>
-                    <tr className="border-b hover:bg-black/[0.02]" style={{ borderColor: LINE }}>
+                    <tr className="border-b hover:bg-black/[0.02]" style={{ borderColor: LINE, background: isTiming ? "#FCF3DE" : undefined }}>
                       <td className="p-3">
                         <button onClick={() => toggleExpand(`task_${t.id}`)} className="flex items-center gap-1.5 text-left">
                           {isOpen ? <ChevronDown size={13} style={{ color: MUTED }} /> : <ChevronRight size={13} style={{ color: MUTED }} />}
@@ -155,6 +157,11 @@ export default function TasksTab({
                       </td>
                       <td className="p-3">
                         <div className="flex justify-end gap-0.5">
+                          {isTiming ? (
+                            <IconBtn title="Stop timer" danger onClick={stopTimer}><Square size={14} fill="currentColor" /></IconBtn>
+                          ) : (
+                            <IconBtn title="Start timer" onClick={() => startTimer(t.catId, t.subId, t.id)}><Play size={14} style={{ color: MOSS }} /></IconBtn>
+                          )}
                           <IconBtn title="Log time" onClick={() => setLogEntryFor(logEntryFor === t.id ? null : t.id)}><Clock size={14} /></IconBtn>
                           <IconBtn title="Duplicate" onClick={() => duplicateTask(t.catId, t.subId, t.id)}><Copy size={14} /></IconBtn>
                           <IconBtn title="Edit" onClick={() => setTaskForm({ catId: t.catId, subId: t.subId, name: t.name, est: t.estMinutes, date: t.date, description: t.description || "", editingTaskId: t.id })}><Pencil size={14} /></IconBtn>

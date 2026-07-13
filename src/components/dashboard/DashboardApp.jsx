@@ -1,17 +1,19 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Trash2, Pencil, ChevronDown, ChevronRight, RotateCcw, Timer, Folder, X, Check, Play, Clock, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Pencil, ChevronDown, ChevronRight, Timer, Folder, X, Check, Play, Clock, AlertTriangle } from "lucide-react";
 import OverviewTab from "./tabs/OverviewTab";
 import TasksTab from "./tabs/TasksTab";
 import EventsTab from "./tabs/EventsTab";
 import TrendsTab from "./tabs/TrendsTab";
+import SettingsTab from "./tabs/SettingsTab";
+import TimerIndicator from "./TimerIndicator";
 import { buildDemoDataFinal } from "../../data/demoData";
 import { addDays, daysAgo, daysAgoStr, dowMonday, fmtHrs, fmtShort, TODAY, toDateStr } from "../../lib/dateUtils";
-import { exportDashboardData, importDashboardData, readDashboardData, writeDashboardData, DASHBOARD_STORAGE_KEY, readEvents, writeEvents } from "../../lib/storage";
-import { AMBER, CLAY, INK, LINE, MOSS, MUTED, PALETTE, PAPER } from "../../styles/dashboardTheme";
+import { exportDashboardData, importDashboardData, readDashboardData, writeDashboardData, DASHBOARD_STORAGE_KEY, readEvents, writeEvents, readActiveTimer, writeActiveTimer } from "../../lib/storage";
+import { AMBER, CLAY, INK, LINE, MUTED, PALETTE, PAPER } from "../../styles/dashboardTheme";
 import { Card, IconBtn, PrimaryBtn, SectionLabel, TinyInput } from "./shared";
-import { addTaskTimeEntry } from "../../lib/taskEntryUtils";
+import { addTaskTimeEntry, computeElapsedMinutes, isTimerStale } from "../../lib/taskEntryUtils";
+import { useSettings } from "../../hooks/useSettings";
 
-const STORAGE_RETENTION_DAYS = 90;
 const SIDEBAR_WIDTH_KEY = "time-tracker:sidebar-width";
 const SIDEBAR_MIN_WIDTH = 220;
 const SIDEBAR_MAX_WIDTH = 480;
@@ -28,8 +30,8 @@ function normalizeCategoryColors(cats) {
   });
 }
 
-function pruneOldData(cats) {
-  const cutoff = daysAgoStr(STORAGE_RETENTION_DAYS);
+function pruneOldData(cats, retentionDays) {
+  const cutoff = daysAgoStr(retentionDays);
   return normalizeCategoryColors(cats).map((c) => ({
     ...c,
     subcategories: c.subcategories.map((s) => ({
@@ -48,7 +50,8 @@ function buildId(prefix) {
 export default function DashboardApp() {
   const [categories, setCategories] = useState(null);
   const [storageReady, setStorageReady] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
+  const { settings, updateSetting } = useSettings();
+  const [activeTab, setActiveTab] = useState(() => settings.lastActiveTab);
   const [dateFilter, setDateFilter] = useState("today");
   const [customStartDate, setCustomStartDate] = useState(TODAY);
   const [customEndDate, setCustomEndDate] = useState(TODAY);
@@ -71,6 +74,7 @@ export default function DashboardApp() {
   const [nepalTime, setNepalTime] = useState(new Date());
   const [events, setEvents] = useState(() => readEvents() || []);
   const [eventForm, setEventForm] = useState(null);
+  const [activeTimer, setActiveTimer] = useState(() => readActiveTimer());
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     const saved = Number(window.localStorage?.getItem(SIDEBAR_WIDTH_KEY));
     return saved >= SIDEBAR_MIN_WIDTH && saved <= SIDEBAR_MAX_WIDTH ? saved : 300;
@@ -92,7 +96,7 @@ export default function DashboardApp() {
     let cancelled = false;
     const stored = readDashboardData();
     if (stored) {
-      if (!cancelled) setCategories(pruneOldData(stored));
+      if (!cancelled) setCategories(pruneOldData(stored, settings.retentionDays));
     } else {
       if (!cancelled) setCategories([]);
     }
@@ -106,14 +110,28 @@ export default function DashboardApp() {
     if (!storageReady || categories === null) return;
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
-      writeDashboardData(pruneOldData(categories));
+      writeDashboardData(pruneOldData(categories, settings.retentionDays));
     }, 400);
     return () => clearTimeout(saveTimer.current);
-  }, [categories, storageReady]);
+  }, [categories, storageReady, settings.retentionDays]);
 
   useEffect(() => {
     writeEvents(events);
   }, [events]);
+
+  useEffect(() => {
+    writeActiveTimer(activeTimer);
+  }, [activeTimer]);
+
+  useEffect(() => {
+    if (!storageReady || !activeTimer) return;
+    const task = findTask(activeTimer.catId, activeTimer.subId, activeTimer.taskId);
+    if (!task) {
+      setActiveTimer(null);
+      showToast("Timer stopped — task no longer exists");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageReady]);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -145,6 +163,9 @@ export default function DashboardApp() {
 
   const updateCategories = (fn) => setCategories((prev) => fn(JSON.parse(JSON.stringify(prev))));
 
+  const findTask = (catId, subId, taskId) =>
+    (categories || []).find((c) => c.id === catId)?.subcategories.find((s) => s.id === subId)?.tasks.find((t) => t.id === taskId);
+
   const upsertEvent = (form) => {
     if (!form.name.trim() || !form.date) return;
     setEvents((prev) => {
@@ -174,6 +195,10 @@ export default function DashboardApp() {
   const deleteCategory = (catId) => {
     updateCategories((cats) => cats.filter((c) => c.id !== catId));
     if (drilldownCatId === catId) setDrilldownCatId(null);
+    if (activeTimer?.catId === catId) {
+      setActiveTimer(null);
+      showToast("Timer stopped — task was deleted");
+    }
   };
 
   const renameCategory = (catId, name) => {
@@ -201,6 +226,10 @@ export default function DashboardApp() {
       if (c) c.subcategories = c.subcategories.filter((s) => s.id !== subId);
       return cats;
     });
+    if (activeTimer?.catId === catId && activeTimer?.subId === subId) {
+      setActiveTimer(null);
+      showToast("Timer stopped — task was deleted");
+    }
   };
 
   const renameSubcategory = (catId, subId, name) => {
@@ -238,6 +267,10 @@ export default function DashboardApp() {
       if (s) s.tasks = s.tasks.filter((t) => t.id !== taskId);
       return cats;
     });
+    if (activeTimer?.taskId === taskId) {
+      setActiveTimer(null);
+      showToast("Timer stopped — task was deleted");
+    }
   };
 
   const duplicateTask = (catId, subId, taskId) => {
@@ -292,6 +325,40 @@ export default function DashboardApp() {
     });
   };
 
+  const finalizeTimer = (timer) => {
+    if (!timer) return;
+    const task = findTask(timer.catId, timer.subId, timer.taskId);
+    if (!task) return;
+
+    let minutes = Math.max(1, Math.round(computeElapsedMinutes(timer.startedAt)));
+
+    if (isTimerStale(timer.startedAt)) {
+      const input = window.prompt(
+        `"${task.name}" has been timing for ${fmtHrs(minutes)}. Enter minutes to log (or Cancel to discard this timer):`,
+        String(minutes)
+      );
+      if (input === null) return;
+      const parsed = Number(input);
+      if (!Number.isFinite(parsed) || parsed <= 0) return;
+      minutes = parsed;
+    }
+
+    addTimeEntry(timer.catId, timer.subId, timer.taskId, minutes);
+  };
+
+  const startTimer = (catId, subId, taskId) => {
+    if (activeTimer?.taskId === taskId) return;
+    if (activeTimer) finalizeTimer(activeTimer);
+    const task = findTask(catId, subId, taskId);
+    if (!task) return;
+    setActiveTimer({ catId, subId, taskId, taskName: task.name, startedAt: new Date().toISOString() });
+  };
+
+  const stopTimer = () => {
+    finalizeTimer(activeTimer);
+    setActiveTimer(null);
+  };
+
   const loadDemoData = () => {
     if (!window.confirm("Load the sample demo dataset? This will replace your current data.")) return;
     const fresh = buildDemoDataFinal();
@@ -299,7 +366,7 @@ export default function DashboardApp() {
     writeDashboardData(fresh);
     setDrilldownCatId(null);
     setTaskForm(null);
-    setActiveTab("overview");
+    changeTab("overview");
     setDateFilter("today");
   };
 
@@ -311,7 +378,7 @@ export default function DashboardApp() {
     writeEvents([]);
     setDrilldownCatId(null);
     setTaskForm(null);
-    setActiveTab("overview");
+    changeTab("overview");
     setDateFilter("today");
   };
 
@@ -320,7 +387,7 @@ export default function DashboardApp() {
     if (!file) return;
     try {
       const data = await importDashboardData(file);
-      const importedCategories = pruneOldData(Array.isArray(data) ? data : data?.categories || []);
+      const importedCategories = pruneOldData(Array.isArray(data) ? data : data?.categories || [], settings.retentionDays);
       const importedEvents = Array.isArray(data) ? [] : data?.events || [];
       setCategories(importedCategories);
       writeDashboardData(importedCategories);
@@ -383,7 +450,7 @@ export default function DashboardApp() {
   const taskBreakdown = useMemo(() => {
     const map = {};
     for (const e of filteredEntries) {
-      map[e.taskId] = map[e.taskId] || { id: e.taskId, name: e.taskName, catId: e.catId, catName: e.catName, catColor: e.catColor, minutes: 0 };
+      map[e.taskId] = map[e.taskId] || { id: e.taskId, name: e.taskName, catId: e.catId, catName: e.catName, catColor: e.catColor, subId: e.subId, minutes: 0 };
       map[e.taskId].minutes += e.duration;
     }
     return Object.values(map).sort((a, b) => b.minutes - a.minutes);
@@ -494,22 +561,42 @@ export default function DashboardApp() {
 
   const toggleExpand = (key) => setExpanded((p) => ({ ...p, [key]: !p[key] }));
 
+  const changeTab = (tab) => {
+    setActiveTab(tab);
+    updateSetting("lastActiveTab", tab);
+  };
+
+  const runningTask = activeTimer ? findTask(activeTimer.catId, activeTimer.subId, activeTimer.taskId) : null;
+
   const nepalTimeLabel = useMemo(() => {
-    const formatter = new Intl.DateTimeFormat("en-US", {
-      timeZone: "Asia/Kathmandu",
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
+    let formatter;
+    try {
+      formatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: settings.timezone,
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+    } catch {
+      formatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: "UTC",
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+    }
     const parts = formatter.formatToParts(nepalTime);
     const hour = parts.find((p) => p.type === "hour")?.value || "";
     const minute = parts.find((p) => p.type === "minute")?.value || "";
     const dayPeriod = parts.find((p) => p.type === "dayPeriod")?.value || "";
     return `${parts.find((p) => p.type === "weekday")?.value || ""} ${parts.find((p) => p.type === "day")?.value || ""} ${parts.find((p) => p.type === "month")?.value || ""} ${hour}:${minute} ${dayPeriod.toUpperCase()}`;
-  }, [nepalTime]);
+  }, [nepalTime, settings.timezone]);
 
   if (categories === null) {
     return (
@@ -600,17 +687,8 @@ export default function DashboardApp() {
             <PrimaryBtn onClick={addCategory} style={{ background: AMBER, padding: "7px 10px" }}><Plus size={14} /></PrimaryBtn>
           </div>
 
-          <div className="mt-4 flex flex-wrap gap-2">
-            <PrimaryBtn onClick={() => exportDashboardData({ categories, events })} style={{ background: MOSS, padding: "7px 10px" }}>Export JSON</PrimaryBtn>
-            <PrimaryBtn onClick={() => fileInputRef.current?.click()} style={{ background: "#4C6B72", padding: "7px 10px" }}>Import JSON</PrimaryBtn>
-            <input ref={fileInputRef} type="file" accept="application/json" className="hidden" onChange={handleImport} />
-          </div>
-
-          <div className="mt-6 flex flex-col gap-2">
-            <button onClick={loadDemoData} className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg border w-full justify-center hover:bg-black/5" style={{ borderColor: LINE, color: MUTED }}><Plus size={13} /> Load demo data</button>
-            <button onClick={resetData} className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg border w-full justify-center hover:bg-black/5" style={{ borderColor: LINE, color: MUTED }}><RotateCcw size={13} /> Clear all data</button>
-          </div>
-          <p className="text-[11px] mt-2 text-center" style={{ color: MUTED }}>Autosaved as JSON in local browser storage</p>
+          <input ref={fileInputRef} type="file" accept="application/json" className="hidden" onChange={handleImport} />
+          <p className="text-[11px] mt-4 text-center" style={{ color: MUTED }}>Autosaved as JSON in local browser storage · see Settings for export/import</p>
         </aside>
 
         <div
@@ -630,8 +708,8 @@ export default function DashboardApp() {
           <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
             <div className="flex items-center gap-2">
               <div className="flex gap-1 p-1 rounded-xl" style={{ background: "#EFEAE0" }}>
-              {[['overview', 'Overview'], ['tasks', 'Tasks'], ['events', 'Events'], ['trends', 'Trends & Insights']].map(([k, label]) => (
-                <button key={k} onClick={() => setActiveTab(k)} className="px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors" style={{ background: activeTab === k ? "#fff" : "transparent", color: activeTab === k ? INK : MUTED }}>{label}</button>
+              {[['overview', 'Overview'], ['tasks', 'Tasks'], ['events', 'Events'], ['trends', 'Trends & Insights'], ['settings', 'Settings']].map(([k, label]) => (
+                <button key={k} onClick={() => changeTab(k)} className="px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors" style={{ background: activeTab === k ? "#fff" : "transparent", color: activeTab === k ? INK : MUTED }}>{label}</button>
               ))}
             </div>
 
@@ -653,17 +731,26 @@ export default function DashboardApp() {
               )}
             </div>
 
-            <div className="text-sm font-medium" style={{ color: MUTED }}>
-              <span style={{ color: INK }}>{nepalTimeLabel}</span>
+            <div className="flex items-center gap-3">
+              {activeTimer && (
+                <TimerIndicator
+                  taskName={runningTask?.name || activeTimer.taskName}
+                  startedAt={activeTimer.startedAt}
+                  onStop={stopTimer}
+                />
+              )}
+              <div className="text-sm font-medium" style={{ color: MUTED }}>
+                <span style={{ color: INK }}>{nepalTimeLabel}</span>
+              </div>
             </div>
           </div>
 
           {activeTab === "overview" && (
-            <OverviewTab totalMinutes={totalMinutes} completedCount={completedCount} remainingCount={remainingCount} completionPct={completionPct} avgPerTask={avgPerTask} idleMinutes={idleMinutes} todayMinutes={todayMinutes} categoryBreakdown={categoryBreakdown} topThree={topThree} drilldownCatId={drilldownCatId} setDrilldownCatId={setDrilldownCatId} subBreakdown={subBreakdown} categories={categories} categoryCompletion={categoryCompletion} topFiveTasks={topFiveTasks} topTwoPerCategory={topTwoPerCategory} />
+            <OverviewTab totalMinutes={totalMinutes} completedCount={completedCount} remainingCount={remainingCount} completionPct={completionPct} avgPerTask={avgPerTask} idleMinutes={idleMinutes} todayMinutes={todayMinutes} categoryBreakdown={categoryBreakdown} topThree={topThree} drilldownCatId={drilldownCatId} setDrilldownCatId={setDrilldownCatId} subBreakdown={subBreakdown} categories={categories} categoryCompletion={categoryCompletion} topFiveTasks={topFiveTasks} topTwoPerCategory={topTwoPerCategory} activeTimerTaskId={activeTimer?.taskId || null} startTimer={startTimer} stopTimer={stopTimer} />
           )}
 
           {activeTab === "tasks" && (
-            <TasksTab categories={categories} flatTasks={flatTasks} taskForm={taskForm} setTaskForm={setTaskForm} upsertTask={upsertTask} deleteTask={deleteTask} duplicateTask={duplicateTask} setTaskStatus={setTaskStatus} logEntryFor={logEntryFor} setLogEntryFor={setLogEntryFor} logHours={logHours} setLogHours={setLogHours} logDuration={logDuration} setLogDuration={setLogDuration} addTimeEntry={addTimeEntry} deleteEntry={deleteEntry} taskFilterCat={taskFilterCat} setTaskFilterCat={setTaskFilterCat} taskFilterStatus={taskFilterStatus} setTaskFilterStatus={setTaskFilterStatus} taskDateFilter={taskDateFilter} setTaskDateFilter={setTaskDateFilter} taskStartDate={taskStartDate} setTaskStartDate={setTaskStartDate} taskEndDate={taskEndDate} setTaskEndDate={setTaskEndDate} expanded={expanded} toggleExpand={toggleExpand} />
+            <TasksTab categories={categories} flatTasks={flatTasks} taskForm={taskForm} setTaskForm={setTaskForm} upsertTask={upsertTask} deleteTask={deleteTask} duplicateTask={duplicateTask} setTaskStatus={setTaskStatus} logEntryFor={logEntryFor} setLogEntryFor={setLogEntryFor} logHours={logHours} setLogHours={setLogHours} logDuration={logDuration} setLogDuration={setLogDuration} addTimeEntry={addTimeEntry} deleteEntry={deleteEntry} taskFilterCat={taskFilterCat} setTaskFilterCat={setTaskFilterCat} taskFilterStatus={taskFilterStatus} setTaskFilterStatus={setTaskFilterStatus} taskDateFilter={taskDateFilter} setTaskDateFilter={setTaskDateFilter} taskStartDate={taskStartDate} setTaskStartDate={setTaskStartDate} taskEndDate={taskEndDate} setTaskEndDate={setTaskEndDate} expanded={expanded} toggleExpand={toggleExpand} activeTimerTaskId={activeTimer?.taskId || null} startTimer={startTimer} stopTimer={stopTimer} />
           )}
 
           {activeTab === "events" && (
@@ -672,6 +759,17 @@ export default function DashboardApp() {
 
           {activeTab === "trends" && (
             <TrendsTab trendData={trendData} trendRange={trendRange} setTrendRange={setTrendRange} completionTrend={completionTrend} weeklyComparison={weeklyComparison} thisWeekTotal={thisWeekTotal} lastWeekTotal={lastWeekTotal} weekDelta={weekDelta} busiestHour={busiestHour} peakHour={peakHour} overdueTasks={overdueTasks} estVsActualByCategory={estVsActualByCategory} estVsActualTasks={estVsActualTasks} />
+          )}
+
+          {activeTab === "settings" && (
+            <SettingsTab
+              settings={settings}
+              updateSetting={updateSetting}
+              onExport={() => exportDashboardData({ categories, events })}
+              onImportClick={() => fileInputRef.current?.click()}
+              loadDemoData={loadDemoData}
+              resetData={resetData}
+            />
           )}
         </main>
       </div>

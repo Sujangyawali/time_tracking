@@ -1,5 +1,13 @@
 export const DASHBOARD_STORAGE_KEY = "time-tracker:categories:v1";
 export const EVENTS_STORAGE_KEY = "time-tracker:events:v1";
+export const TIMER_STORAGE_KEY = "time-tracker:active-timer:v1";
+export const SETTINGS_STORAGE_KEY = "time-tracker:settings:v1";
+
+export const DEFAULT_SETTINGS = {
+  retentionDays: 90,
+  timezone: "Asia/Kathmandu",
+  lastActiveTab: "overview",
+};
 
 export function readDashboardData() {
   if (typeof window === "undefined" || !window.localStorage) return null;
@@ -35,6 +43,51 @@ export function writeEvents(events) {
   if (typeof window === "undefined" || !window.localStorage) return false;
   try {
     window.localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(events));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function readActiveTimer() {
+  if (typeof window === "undefined" || !window.localStorage) return null;
+  try {
+    const raw = window.localStorage.getItem(TIMER_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeActiveTimer(timer) {
+  if (typeof window === "undefined" || !window.localStorage) return false;
+  try {
+    if (timer) {
+      window.localStorage.setItem(TIMER_STORAGE_KEY, JSON.stringify(timer));
+    } else {
+      window.localStorage.removeItem(TIMER_STORAGE_KEY);
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function readSettings() {
+  if (typeof window === "undefined" || !window.localStorage) return { ...DEFAULT_SETTINGS };
+  try {
+    const raw = window.localStorage.getItem(SETTINGS_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return { ...DEFAULT_SETTINGS, ...(parsed || {}) };
+  } catch {
+    return { ...DEFAULT_SETTINGS };
+  }
+}
+
+export function writeSettings(settings) {
+  if (typeof window === "undefined" || !window.localStorage) return false;
+  try {
+    window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
     return true;
   } catch {
     return false;
