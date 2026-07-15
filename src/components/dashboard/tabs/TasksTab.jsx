@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { Plus, Trash2, Pencil, ChevronDown, ChevronRight, X, Check, Clock, Play, Square, AlertTriangle, Copy } from "lucide-react";
+import { Plus, Trash2, Pencil, ChevronDown, ChevronRight, X, Check, Clock, Play, Square, AlertTriangle, Copy, CopyPlus } from "lucide-react";
 import { Card, SectionLabel, TinyInput, TinySelect, MultiSelect, PrimaryBtn, IconBtn } from "../shared";
 import { addDays, fmtHrs, fmtShort, TODAY } from "../../../lib/dateUtils";
 import { AMBER, CLAY, LINE, MOSS, MUTED, INK, TINT, TINT_SOFT } from "../../../styles/dashboardTheme";
 
 export default function TasksTab({
-  categories, flatTasks, taskForm, setTaskForm, upsertTask, deleteTask, duplicateTask, setTaskStatus,
+  categories, flatTasks, taskForm, setTaskForm, upsertTask, deleteTask, duplicateTask, duplicateAllTasksForTomorrow, setTaskStatus,
   logEntryFor, setLogEntryFor, logHours, setLogHours, logDuration, setLogDuration, addTimeEntry, deleteEntry,
   taskFilterCat, setTaskFilterCat, taskFilterStatus, setTaskFilterStatus, expanded, toggleExpand,
   taskDateFilter, setTaskDateFilter, taskStartDate, setTaskStartDate, taskEndDate, setTaskEndDate,
@@ -17,6 +17,7 @@ export default function TasksTab({
   const getDateBounds = () => {
     if (taskDateFilter === "all") return { start: "0000-01-01", end: "9999-12-31" };
     if (taskDateFilter === "today") return { start: TODAY, end: TODAY };
+    if (taskDateFilter === "yesterday") return { start: addDays(TODAY, -1), end: addDays(TODAY, -1) };
     if (taskDateFilter === "tomorrow") return { start: addDays(TODAY, 1), end: addDays(TODAY, 1) };
     if (taskDateFilter === "7d") return { start: new Date(new Date(TODAY).setDate(new Date(TODAY).getDate() - 6)).toISOString().split('T')[0], end: TODAY };
     if (taskDateFilter === "30d") return { start: new Date(new Date(TODAY).setDate(new Date(TODAY).getDate() - 29)).toISOString().split('T')[0], end: TODAY };
@@ -63,6 +64,7 @@ export default function TasksTab({
         <TinySelect value={taskDateFilter} onChange={(e) => setTaskDateFilter(e.target.value)}>
           <option value="all">All dates</option>
           <option value="today">Today</option>
+          <option value="yesterday">Yesterday</option>
           <option value="tomorrow">Tomorrow</option>
           <option value="7d">Last 7 days</option>
           <option value="30d">Last 30 days</option>
@@ -76,6 +78,7 @@ export default function TasksTab({
           </>
         )}
         <div className="flex-1" />
+        <PrimaryBtn onClick={duplicateAllTasksForTomorrow} style={{ background: MOSS }}><CopyPlus size={14} /> Duplicate today for tomorrow</PrimaryBtn>
         <PrimaryBtn onClick={startNewTask} style={{ background: "#D98E3D" }}><Plus size={14} /> New task</PrimaryBtn>
       </div>
 

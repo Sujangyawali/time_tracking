@@ -298,6 +298,27 @@ export default function DashboardApp() {
     showToast(`"${sourceTask.name}" added for tomorrow`);
   };
 
+  const duplicateAllTasksForTomorrow = () => {
+    const todaysCount = flatTasks.filter((t) => t.date === TODAY).length;
+    if (todaysCount === 0) {
+      showToast("No tasks today to duplicate");
+      return;
+    }
+    if (!window.confirm(`Duplicate all ${todaysCount} of today's tasks to tomorrow?`)) return;
+    updateCategories((cats) => {
+      for (const c of cats) {
+        for (const s of c.subcategories) {
+          const toCopy = s.tasks.filter((t) => t.date === TODAY);
+          for (const t of toCopy) {
+            s.tasks.push({ ...t, id: buildId("t"), date: addDays(t.date, 1), status: "Pending", entries: [] });
+          }
+        }
+      }
+      return cats;
+    });
+    showToast(`${todaysCount} task${todaysCount > 1 ? "s" : ""} duplicated for tomorrow`);
+  };
+
   const setTaskStatus = (catId, subId, taskId, status) => {
     updateCategories((cats) => {
       const t = cats.find((item) => item.id === catId)?.subcategories.find((item) => item.id === subId)?.tasks.find((item) => item.id === taskId);
@@ -758,7 +779,7 @@ export default function DashboardApp() {
           )}
 
           {activeTab === "tasks" && (
-            <TasksTab categories={categories} flatTasks={flatTasks} taskForm={taskForm} setTaskForm={setTaskForm} upsertTask={upsertTask} deleteTask={deleteTask} duplicateTask={duplicateTask} setTaskStatus={setTaskStatus} logEntryFor={logEntryFor} setLogEntryFor={setLogEntryFor} logHours={logHours} setLogHours={setLogHours} logDuration={logDuration} setLogDuration={setLogDuration} addTimeEntry={addTimeEntry} deleteEntry={deleteEntry} taskFilterCat={taskFilterCat} setTaskFilterCat={setTaskFilterCat} taskFilterStatus={taskFilterStatus} setTaskFilterStatus={setTaskFilterStatus} taskDateFilter={taskDateFilter} setTaskDateFilter={setTaskDateFilter} taskStartDate={taskStartDate} setTaskStartDate={setTaskStartDate} taskEndDate={taskEndDate} setTaskEndDate={setTaskEndDate} expanded={expanded} toggleExpand={toggleExpand} activeTimerTaskId={activeTimer?.taskId || null} startTimer={startTimer} stopTimer={stopTimer} />
+            <TasksTab categories={categories} flatTasks={flatTasks} taskForm={taskForm} setTaskForm={setTaskForm} upsertTask={upsertTask} deleteTask={deleteTask} duplicateTask={duplicateTask} duplicateAllTasksForTomorrow={duplicateAllTasksForTomorrow} setTaskStatus={setTaskStatus} logEntryFor={logEntryFor} setLogEntryFor={setLogEntryFor} logHours={logHours} setLogHours={setLogHours} logDuration={logDuration} setLogDuration={setLogDuration} addTimeEntry={addTimeEntry} deleteEntry={deleteEntry} taskFilterCat={taskFilterCat} setTaskFilterCat={setTaskFilterCat} taskFilterStatus={taskFilterStatus} setTaskFilterStatus={setTaskFilterStatus} taskDateFilter={taskDateFilter} setTaskDateFilter={setTaskDateFilter} taskStartDate={taskStartDate} setTaskStartDate={setTaskStartDate} taskEndDate={taskEndDate} setTaskEndDate={setTaskEndDate} expanded={expanded} toggleExpand={toggleExpand} activeTimerTaskId={activeTimer?.taskId || null} startTimer={startTimer} stopTimer={stopTimer} />
           )}
 
           {activeTab === "events" && (
