@@ -5,6 +5,7 @@ import TasksTab from "./tabs/TasksTab";
 import EventsTab from "./tabs/EventsTab";
 import TrendsTab from "./tabs/TrendsTab";
 import SettingsTab from "./tabs/SettingsTab";
+import StreaksTab from "./tabs/StreaksTab";
 import TimerIndicator from "./TimerIndicator";
 import ThemeToggle from "./ThemeToggle";
 import { buildDemoDataFinal } from "../../data/demoData";
@@ -13,6 +14,7 @@ import { exportDashboardData, importDashboardData, readDashboardData, writeDashb
 import { AMBER, CLAY, INK, LINE, MUTED, PALETTE, PAPER, SURFACE, TINT } from "../../styles/dashboardTheme";
 import { Card, IconBtn, PrimaryBtn, SectionLabel, TinyInput } from "./shared";
 import { addTaskTimeEntry, computeElapsedMinutes, isTimerStale } from "../../lib/taskEntryUtils";
+import { buildStreakSeries } from "../../lib/streakUtils";
 import { useSettings } from "../../hooks/useSettings";
 
 const SIDEBAR_WIDTH_KEY = "time-tracker:sidebar-width";
@@ -442,6 +444,11 @@ export default function DashboardApp() {
     return out;
   }, [flatTasks]);
 
+  const streakSeries = useMemo(
+    () => buildStreakSeries(flatTasks, settings.retentionDays),
+    [flatTasks, settings.retentionDays]
+  );
+
   const filterBounds = (filter) => {
     if (filter === "today") return { start: TODAY, end: TODAY };
     if (filter === "7d") return { start: daysAgoStr(6), end: TODAY };
@@ -736,7 +743,7 @@ export default function DashboardApp() {
           <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
             <div className="flex items-center gap-2">
               <div className="flex gap-1 p-1 rounded-xl" style={{ background: TINT }}>
-              {[['overview', 'Overview'], ['tasks', 'Tasks'], ['events', 'Events'], ['trends', 'Trends & Insights'], ['settings', 'Settings']].map(([k, label]) => (
+              {[['overview', 'Overview'], ['tasks', 'Tasks'], ['events', 'Events'], ['trends', 'Trends & Insights'], ['streaks', 'Streaks'], ['settings', 'Settings']].map(([k, label]) => (
                 <button key={k} onClick={() => changeTab(k)} className="px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors" style={{ background: activeTab === k ? SURFACE : "transparent", color: activeTab === k ? INK : MUTED }}>{label}</button>
               ))}
             </div>
@@ -788,6 +795,10 @@ export default function DashboardApp() {
 
           {activeTab === "trends" && (
             <TrendsTab trendData={trendData} trendRange={trendRange} setTrendRange={setTrendRange} completionTrend={completionTrend} weeklyComparison={weeklyComparison} thisWeekTotal={thisWeekTotal} lastWeekTotal={lastWeekTotal} weekDelta={weekDelta} busiestHour={busiestHour} peakHour={peakHour} overdueTasks={overdueTasks} estVsActualByCategory={estVsActualByCategory} estVsActualTasks={estVsActualTasks} />
+          )}
+
+          {activeTab === "streaks" && (
+            <StreaksTab streakSeries={streakSeries} />
           )}
 
           {activeTab === "settings" && (

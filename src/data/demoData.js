@@ -20,7 +20,9 @@ function buildDemoData() {
   return [
     cat("Work", PALETTE[0], [
       sub("Client Calls", [
-        task("Daily standup", 15, "Completed", 0, [mkEntry(0, 9, 0, 15)]),
+        ...Array.from({ length: 13 }, (_, i) => 12 - i).map((offset) =>
+          task("Daily standup", 15, "Completed", offset, [mkEntry(offset, 9, 0, 15)])
+        ),
         task("Q3 sync with Acme Corp", 45, "Completed", 2, [mkEntry(2, 9, 15, 50)]),
         task("Vendor negotiation call", 30, "Pending", 12, []),
         task("Quarterly review", 60, "Completed", 24, [mkEntry(24, 10, 30, 65)]),
@@ -48,7 +50,11 @@ function buildDemoData() {
     ]),
     cat("Health", PALETTE[2], [
       sub("Exercise", [
-        task("Morning run / workout", 30, "Completed", 0, [mkEntry(0, 6, 45, 32)]),
+        ...Array.from({ length: 10 }, (_, i) => 9 - i).map((offset) =>
+          offset === 3
+            ? task("Morning run / workout", 30, "Pending", offset, [])
+            : task("Morning run / workout", 30, "Completed", offset, [mkEntry(offset, 6, 45, 32)])
+        ),
         task("Yoga session", 20, "Pending", 5, []),
         task("Pilates class", 35, "Completed", 31, [mkEntry(31, 7, 0, 36)]),
       ]),
