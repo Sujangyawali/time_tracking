@@ -4,6 +4,20 @@ import { Card, SectionLabel, EmptyNote } from "../shared";
 import { dowMonday } from "../../../lib/dateUtils";
 import { AMBER, LINE, MUTED } from "../../../styles/dashboardTheme";
 
+function groupByCategory(streakSeries) {
+  const map = new Map();
+  for (const s of streakSeries) {
+    if (!map.has(s.catId)) {
+      map.set(s.catId, { catId: s.catId, catName: s.catName, catColor: s.catColor, items: [] });
+    }
+    map.get(s.catId).items.push(s);
+  }
+  // streakSeries arrives already sorted by currentStreak/longestStreak desc, and
+  // Map preserves first-insertion order, so groups naturally lead with whichever
+  // category contains the single best streak — no separate category sort needed.
+  return [...map.values()];
+}
+
 function chunkIntoWeeks(timeline) {
   if (timeline.length === 0) return [];
   const firstDate = timeline[0].date;
@@ -71,10 +85,22 @@ export default function StreaksTab({ streakSeries }) {
     );
   }
 
+  const groups = groupByCategory(streakSeries);
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-      {streakSeries.map((s) => (
-        <StreakCard key={`${s.subId}::${s.name}`} series={s} />
+    <div className="space-y-5">
+      {groups.map((g) => (
+        <div key={g.catId}>
+          <div className="flex items-center gap-1.5 mb-3">
+            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: g.catColor }} />
+            <span className="text-[11px] uppercase tracking-[0.14em] font-semibold" style={{ color: MUTED }}>{g.catName}</span>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {g.items.map((s) => (
+              <StreakCard key={`${s.subId}::${s.name}`} series={s} />
+            ))}
+          </div>
+        </div>
       ))}
     </div>
   );
