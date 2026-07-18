@@ -2,7 +2,7 @@ import React from "react";
 import { Flame } from "lucide-react";
 import { Card, SectionLabel, EmptyNote } from "../shared";
 import { dowMonday } from "../../../lib/dateUtils";
-import { AMBER, LINE, MUTED } from "../../../styles/dashboardTheme";
+import { AMBER, INK, LINE, MUTED, SURFACE, TINT } from "../../../styles/dashboardTheme";
 
 function groupByCategory(streakSeries) {
   const map = new Map();
@@ -33,8 +33,9 @@ function chunkIntoWeeks(timeline) {
 }
 
 function StreakCard({ series }) {
-  const { catColor, catName, subName, name, timeline, currentStreak, longestStreak } = series;
+  const { catColor, catName, subName, name, level, timeline, currentStreak, longestStreak } = series;
   const weeks = chunkIntoWeeks(timeline);
+  const subtitle = level === "subcategory" ? catName : `${catName} / ${subName}`;
 
   return (
     <Card className="p-5">
@@ -43,7 +44,7 @@ function StreakCard({ series }) {
           <span className="w-2 h-2 rounded-full shrink-0" style={{ background: catColor }} />
           <div className="min-w-0">
             <div className="font-medium truncate">{name}</div>
-            <div className="text-[11px] truncate" style={{ color: MUTED }}>{catName} / {subName}</div>
+            <div className="text-[11px] truncate" style={{ color: MUTED }}>{subtitle}</div>
           </div>
         </div>
         <div className="text-right shrink-0">
@@ -75,33 +76,56 @@ function StreakCard({ series }) {
   );
 }
 
-export default function StreaksTab({ streakSeries }) {
+function GroupByToggle({ streakGroupBy, setStreakGroupBy }) {
+  return (
+    <div className="flex gap-1 p-1 rounded-xl" style={{ background: TINT }}>
+      {[["task", "By Task"], ["subcategory", "By Subcategory"]].map(([k, label]) => (
+        <button
+          key={k}
+          onClick={() => setStreakGroupBy(k)}
+          className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+          style={{ background: streakGroupBy === k ? SURFACE : "transparent", color: streakGroupBy === k ? INK : MUTED }}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export default function StreaksTab({ streakSeries, streakGroupBy, setStreakGroupBy }) {
   if (streakSeries.length === 0) {
     return (
-      <Card className="p-5">
-        <SectionLabel>Streaks</SectionLabel>
-        <EmptyNote text="No streaks yet — use “Duplicate today for tomorrow” (or the per-row copy icon) on a task for at least 7 days in a row, marking each day Completed, to start tracking a streak here." />
-      </Card>
+      <div className="space-y-4">
+        <GroupByToggle streakGroupBy={streakGroupBy} setStreakGroupBy={setStreakGroupBy} />
+        <Card className="p-5">
+          <SectionLabel>Streaks</SectionLabel>
+          <EmptyNote text="No streaks yet — use “Duplicate today for tomorrow” (or the per-row copy icon) on a task for at least 7 days in a row, marking each day Completed, to start tracking a streak here." />
+        </Card>
+      </div>
     );
   }
 
   const groups = groupByCategory(streakSeries);
 
   return (
-    <div className="space-y-5">
-      {groups.map((g) => (
-        <div key={g.catId}>
-          <div className="flex items-center gap-1.5 mb-3">
-            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: g.catColor }} />
-            <span className="text-[11px] uppercase tracking-[0.14em] font-semibold" style={{ color: MUTED }}>{g.catName}</span>
+    <div className="space-y-4">
+      <GroupByToggle streakGroupBy={streakGroupBy} setStreakGroupBy={setStreakGroupBy} />
+      <div className="space-y-5">
+        {groups.map((g) => (
+          <div key={g.catId}>
+            <div className="flex items-center gap-1.5 mb-3">
+              <span className="w-2 h-2 rounded-full shrink-0" style={{ background: g.catColor }} />
+              <span className="text-[11px] uppercase tracking-[0.14em] font-semibold" style={{ color: MUTED }}>{g.catName}</span>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {g.items.map((s) => (
+                <StreakCard key={`${s.subId}::${s.name}`} series={s} />
+              ))}
+            </div>
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            {g.items.map((s) => (
-              <StreakCard key={`${s.subId}::${s.name}`} series={s} />
-            ))}
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }

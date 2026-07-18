@@ -60,6 +60,7 @@ export default function DashboardApp() {
   const [customEndDate, setCustomEndDate] = useState(TODAY);
   const [drilldownCatId, setDrilldownCatId] = useState(null);
   const [trendRange, setTrendRange] = useState(30);
+  const [streakGroupBy, setStreakGroupBy] = useState("task");
   const [expanded, setExpanded] = useState({});
   const [newCatName, setNewCatName] = useState("");
   const [addingSubFor, setAddingSubFor] = useState(null);
@@ -283,6 +284,7 @@ export default function DashboardApp() {
   const duplicateTask = (catId, subId, taskId) => {
     const sourceTask = categories.find((item) => item.id === catId)?.subcategories.find((item) => item.id === subId)?.tasks.find((item) => item.id === taskId);
     if (!sourceTask) return;
+    const newDate = addDays(sourceTask.date, 1);
     updateCategories((cats) => {
       const s = cats.find((item) => item.id === catId)?.subcategories.find((item) => item.id === subId);
       const taskToCopy = s?.tasks.find((item) => item.id === taskId);
@@ -291,35 +293,59 @@ export default function DashboardApp() {
       s.tasks.push({
         ...taskToCopy,
         id: buildId("t"),
-        date: addDays(taskToCopy.date, 1),
+        date: newDate,
         status: "Pending",
         entries: [],
       });
       return cats;
     });
-    showToast(`"${sourceTask.name}" added for tomorrow`);
+    showToast(`"${sourceTask.name}" copied to ${fmtShort(newDate)}`);
   };
 
-  const duplicateAllTasksForTomorrow = () => {
+  const duplicateTaskToDate = (catId, subId, taskId, targetDate) => {
+    if (!targetDate) return;
+    const sourceTask = categories.find((item) => item.id === catId)?.subcategories.find((item) => item.id === subId)?.tasks.find((item) => item.id === taskId);
+    if (!sourceTask) return;
+    updateCategories((cats) => {
+      const s = cats.find((item) => item.id === catId)?.subcategories.find((item) => item.id === subId);
+      const taskToCopy = s?.tasks.find((item) => item.id === taskId);
+      if (!s || !taskToCopy) return cats;
+
+      s.tasks.push({
+        ...taskToCopy,
+        id: buildId("t"),
+        date: targetDate,
+        status: "Pending",
+        entries: [],
+      });
+      return cats;
+    });
+    showToast(`"${sourceTask.name}" copied to ${fmtShort(targetDate)}`);
+  };
+
+  const duplicateAllTasksToDate = (targetDate) => {
+    if (!targetDate) return;
     const todaysCount = flatTasks.filter((t) => t.date === TODAY).length;
     if (todaysCount === 0) {
       showToast("No tasks today to duplicate");
       return;
     }
-    if (!window.confirm(`Duplicate all ${todaysCount} of today's tasks to tomorrow?`)) return;
+    if (!window.confirm(`Duplicate all ${todaysCount} of today's tasks to ${fmtShort(targetDate)}?`)) return;
     updateCategories((cats) => {
       for (const c of cats) {
         for (const s of c.subcategories) {
           const toCopy = s.tasks.filter((t) => t.date === TODAY);
           for (const t of toCopy) {
-            s.tasks.push({ ...t, id: buildId("t"), date: addDays(t.date, 1), status: "Pending", entries: [] });
+            s.tasks.push({ ...t, id: buildId("t"), date: targetDate, status: "Pending", entries: [] });
           }
         }
       }
       return cats;
     });
-    showToast(`${todaysCount} task${todaysCount > 1 ? "s" : ""} duplicated for tomorrow`);
+    showToast(`${todaysCount} task${todaysCount > 1 ? "s" : ""} duplicated to ${fmtShort(targetDate)}`);
   };
+
+  const duplicateAllTasksForTomorrow = () => duplicateAllTasksToDate(addDays(TODAY, 1));
 
   const setTaskStatus = (catId, subId, taskId, status) => {
     updateCategories((cats) => {
@@ -445,8 +471,8 @@ export default function DashboardApp() {
   }, [flatTasks]);
 
   const streakSeries = useMemo(
-    () => buildStreakSeries(flatTasks, settings.retentionDays),
-    [flatTasks, settings.retentionDays]
+    () => buildStreakSeries(flatTasks, settings.retentionDays, streakGroupBy),
+    [flatTasks, settings.retentionDays, streakGroupBy]
   );
 
   const filterBounds = (filter) => {
@@ -786,7 +812,7 @@ export default function DashboardApp() {
           )}
 
           {activeTab === "tasks" && (
-            <TasksTab categories={categories} flatTasks={flatTasks} taskForm={taskForm} setTaskForm={setTaskForm} upsertTask={upsertTask} deleteTask={deleteTask} duplicateTask={duplicateTask} duplicateAllTasksForTomorrow={duplicateAllTasksForTomorrow} setTaskStatus={setTaskStatus} logEntryFor={logEntryFor} setLogEntryFor={setLogEntryFor} logHours={logHours} setLogHours={setLogHours} logDuration={logDuration} setLogDuration={setLogDuration} addTimeEntry={addTimeEntry} deleteEntry={deleteEntry} taskFilterCat={taskFilterCat} setTaskFilterCat={setTaskFilterCat} taskFilterStatus={taskFilterStatus} setTaskFilterStatus={setTaskFilterStatus} taskDateFilter={taskDateFilter} setTaskDateFilter={setTaskDateFilter} taskStartDate={taskStartDate} setTaskStartDate={setTaskStartDate} taskEndDate={taskEndDate} setTaskEndDate={setTaskEndDate} expanded={expanded} toggleExpand={toggleExpand} activeTimerTaskId={activeTimer?.taskId || null} startTimer={startTimer} stopTimer={stopTimer} />
+            <TasksTab categories={categories} flatTasks={flatTasks} taskForm={taskForm} setTaskForm={setTaskForm} upsertTask={upsertTask} deleteTask={deleteTask} duplicateTask={duplicateTask} duplicateTaskToDate={duplicateTaskToDate} duplicateAllTasksForTomorrow={duplicateAllTasksForTomorrow} duplicateAllTasksToDate={duplicateAllTasksToDate} setTaskStatus={setTaskStatus} logEntryFor={logEntryFor} setLogEntryFor={setLogEntryFor} logHours={logHours} setLogHours={setLogHours} logDuration={logDuration} setLogDuration={setLogDuration} addTimeEntry={addTimeEntry} deleteEntry={deleteEntry} taskFilterCat={taskFilterCat} setTaskFilterCat={setTaskFilterCat} taskFilterStatus={taskFilterStatus} setTaskFilterStatus={setTaskFilterStatus} taskDateFilter={taskDateFilter} setTaskDateFilter={setTaskDateFilter} taskStartDate={taskStartDate} setTaskStartDate={setTaskStartDate} taskEndDate={taskEndDate} setTaskEndDate={setTaskEndDate} expanded={expanded} toggleExpand={toggleExpand} activeTimerTaskId={activeTimer?.taskId || null} startTimer={startTimer} stopTimer={stopTimer} />
           )}
 
           {activeTab === "events" && (
@@ -798,7 +824,7 @@ export default function DashboardApp() {
           )}
 
           {activeTab === "streaks" && (
-            <StreaksTab streakSeries={streakSeries} />
+            <StreaksTab streakSeries={streakSeries} streakGroupBy={streakGroupBy} setStreakGroupBy={setStreakGroupBy} />
           )}
 
           {activeTab === "settings" && (

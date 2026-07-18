@@ -3,21 +3,25 @@ import { TODAY, addDays } from "./dateUtils";
 const MAX_WINDOW_DAYS = 90;
 const MIN_OCCURRENCES_TO_SHOW = 7;
 
-export function buildStreakSeries(flatTasks, retentionDays) {
+export function buildStreakSeries(flatTasks, retentionDays, groupBy = "task") {
   const windowDays = Math.min(retentionDays || MAX_WINDOW_DAYS, MAX_WINDOW_DAYS);
   const windowStart = addDays(TODAY, -(windowDays - 1));
 
+  // "task" groups by exact task name within a subcategory (current behavior);
+  // "subcategory" groups by subcategory alone, so a day counts as filled if
+  // ANY task in that subcategory was completed that day, regardless of which one.
   const groups = new Map();
   for (const t of flatTasks) {
-    const key = `${t.subId}::${t.name}`;
+    const key = groupBy === "subcategory" ? t.subId : `${t.subId}::${t.name}`;
     if (!groups.has(key)) {
       groups.set(key, {
         subId: t.subId,
-        name: t.name,
+        name: groupBy === "subcategory" ? t.subName : t.name,
         catId: t.catId,
         catName: t.catName,
         catColor: t.catColor,
         subName: t.subName,
+        level: groupBy === "subcategory" ? "subcategory" : "task",
         occurrences: [],
       });
     }
@@ -70,6 +74,7 @@ export function buildStreakSeries(flatTasks, retentionDays) {
       catName: group.catName,
       catColor: group.catColor,
       subName: group.subName,
+      level: group.level,
       timeline,
       currentStreak,
       longestStreak,

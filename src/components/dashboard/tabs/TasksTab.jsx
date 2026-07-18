@@ -1,11 +1,67 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Plus, Trash2, Pencil, ChevronDown, ChevronRight, X, Check, Clock, Play, Square, AlertTriangle, Copy, CopyPlus } from "lucide-react";
 import { Card, SectionLabel, TinyInput, TinySelect, MultiSelect, PrimaryBtn, IconBtn } from "../shared";
 import { addDays, fmtHrs, fmtShort, TODAY } from "../../../lib/dateUtils";
 import { AMBER, CLAY, LINE, MOSS, MUTED, INK, TINT, TINT_SOFT } from "../../../styles/dashboardTheme";
 
+function CopyDropdown({ renderTrigger, onCopyNextDay, onCopySpecificDay, nextDayLabel = "Copy for next day", specificDayLabel = "Copy for specific day…" }) {
+  const [open, setOpen] = useState(false);
+  const [pickingDate, setPickingDate] = useState(false);
+  const [dateValue, setDateValue] = useState(TODAY);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const onClickOutside = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false);
+        setPickingDate(false);
+      }
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
+  const close = () => {
+    setOpen(false);
+    setPickingDate(false);
+  };
+
+  return (
+    <div className="relative inline-block" ref={ref}>
+      {renderTrigger(() => setOpen((o) => !o))}
+      {open && (
+        <div className="absolute right-0 z-10 mt-1 min-w-[210px] rounded-lg border bg-white shadow-lg py-1" style={{ borderColor: LINE }}>
+          {!pickingDate ? (
+            <>
+              <button
+                type="button"
+                className="w-full text-left px-3 py-1.5 text-sm hover:bg-black/[0.03]"
+                onClick={() => { onCopyNextDay(); close(); }}
+              >
+                {nextDayLabel}
+              </button>
+              <button
+                type="button"
+                className="w-full text-left px-3 py-1.5 text-sm hover:bg-black/[0.03]"
+                onClick={() => setPickingDate(true)}
+              >
+                {specificDayLabel}
+              </button>
+            </>
+          ) : (
+            <div className="px-2.5 py-2 flex items-center gap-1.5">
+              <TinyInput type="date" autoFocus value={dateValue} onChange={(e) => setDateValue(e.target.value)} className="text-xs py-1 flex-1 min-w-0" />
+              <IconBtn title="Confirm" onClick={() => { onCopySpecificDay(dateValue); close(); }}><Check size={14} /></IconBtn>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function TasksTab({
-  categories, flatTasks, taskForm, setTaskForm, upsertTask, deleteTask, duplicateTask, duplicateAllTasksForTomorrow, setTaskStatus,
+  categories, flatTasks, taskForm, setTaskForm, upsertTask, deleteTask, duplicateTask, duplicateTaskToDate, duplicateAllTasksForTomorrow, duplicateAllTasksToDate, setTaskStatus,
   logEntryFor, setLogEntryFor, logHours, setLogHours, logDuration, setLogDuration, addTimeEntry, deleteEntry,
   taskFilterCat, setTaskFilterCat, taskFilterStatus, setTaskFilterStatus, expanded, toggleExpand,
   taskDateFilter, setTaskDateFilter, taskStartDate, setTaskStartDate, taskEndDate, setTaskEndDate,
@@ -78,7 +134,15 @@ export default function TasksTab({
           </>
         )}
         <div className="flex-1" />
-        <PrimaryBtn onClick={duplicateAllTasksForTomorrow} style={{ background: MOSS }}><CopyPlus size={14} /> Duplicate today for tomorrow</PrimaryBtn>
+        <CopyDropdown
+          renderTrigger={(toggle) => (
+            <PrimaryBtn onClick={toggle} style={{ background: MOSS }}><CopyPlus size={14} /> Duplicate today's tasks</PrimaryBtn>
+          )}
+          onCopyNextDay={duplicateAllTasksForTomorrow}
+          onCopySpecificDay={duplicateAllTasksToDate}
+          nextDayLabel="Duplicate for next day"
+          specificDayLabel="Duplicate for specific day…"
+        />
         <PrimaryBtn onClick={startNewTask} style={{ background: "#D98E3D" }}><Plus size={14} /> New task</PrimaryBtn>
       </div>
 
@@ -166,7 +230,13 @@ export default function TasksTab({
                             <IconBtn title="Start timer" onClick={() => startTimer(t.catId, t.subId, t.id)}><Play size={14} style={{ color: MOSS }} /></IconBtn>
                           )}
                           <IconBtn title="Log time" onClick={() => setLogEntryFor(logEntryFor === t.id ? null : t.id)}><Clock size={14} /></IconBtn>
-                          <IconBtn title="Duplicate" onClick={() => duplicateTask(t.catId, t.subId, t.id)}><Copy size={14} /></IconBtn>
+                          <CopyDropdown
+                            renderTrigger={(toggle) => (
+                              <IconBtn title="Duplicate" onClick={toggle}><Copy size={14} /></IconBtn>
+                            )}
+                            onCopyNextDay={() => duplicateTask(t.catId, t.subId, t.id)}
+                            onCopySpecificDay={(date) => duplicateTaskToDate(t.catId, t.subId, t.id, date)}
+                          />
                           <IconBtn title="Edit" onClick={() => setTaskForm({ catId: t.catId, subId: t.subId, name: t.name, est: t.estMinutes, date: t.date, description: t.description || "", editingTaskId: t.id })}><Pencil size={14} /></IconBtn>
                           <IconBtn title="Delete" danger onClick={() => deleteTask(t.catId, t.subId, t.id)}><Trash2 size={14} /></IconBtn>
                         </div>
